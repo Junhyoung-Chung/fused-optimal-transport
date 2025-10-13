@@ -1,0 +1,36 @@
+# venv
+.idea
+venv
+
+# macOS
+.DS_Store
+
+# LaTex byproducts
+*.aux
+*.log
+*.ent
+*.bbl
+*.blg
+*.out
+*.synctex.gz
+*.nav
+*.snm
+*.toc
+*.thm
+
+# R data
+*.RData
+*.Rhistory
+
+# data
+realdata/MPI-FAUST
+realdata/*.csv
+realdata/*.xls
+realdata/*.xlsx
+realdata/*.data
+realdata/*.all-data
+realdata/*.zip
+realdata/.ipynb_checkpoints
+
+# eps files
+plots/*.pdf
