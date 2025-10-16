@@ -55,9 +55,10 @@
 \usepackage{microtype}      % microtypography
 \usepackage{xcolor}         % colors
 \usepackage{mathtools}
+\usepackage{amsmath,amssymb}
 
 % Note. For the workshop paper template, both \title{} and \workshoptitle{} are required, with the former indicating the paper title shown in the title and the latter indicating the workshop title displayed in the footnote. 
-\title{Fused Optimal Transport}
+\title{Continuous Fused Optimal Transport}
 
 
 % The \author macro works with any number of authors. There are two commands
@@ -73,7 +74,7 @@
   Junhyoung Chung\thanks{\href{https://junhyoung-chung.github.io/}{https://junhyoung-chung.github.io/}} \\
   Department of Statistics\\
   Seoul National University\\
-  Seoul National University, Seoul 08826, Republic of Korea \\
+  Seoul 08826, Republic of Korea \\
   \texttt{junhyoung0534@gmail.com} \\
   % examples of more authors
   % \And
@@ -117,18 +118,16 @@
 \section{Introduction}
 
 \section{Fused Optimal Transport}
-%%% Basic notations %%%
-Let $(\Omega,\mathcal{F},\mathbb{P})$ be a probability space and $(\mathbb{F},\mathcal{B}(\mathbb{F}))$ be a measurable space, where $\mathbb{F} \subset L^2(\mathcal{X} ; dx)$ and $L^2(\mathcal{X} ; dx)$ is a space of square integrable real-valued functions over a compact region $\mathcal{X} \subset \mathbb{R}^d$. The \emph{norm} on $\mathbb{F}$ is defined as $\|f\| \coloneqq (\int_{\mathcal{X}} |f(x)|^2 dx)^{1/2}$. A measurable mapping $X : \Omega \to \mathbb{F}$ is called a \emph{random function} and $\mathbb{P}_X \coloneqq \mathbb{P} \circ X^{-1}$ a \emph{distribution} of $X$.
+\paragraph{Notations.} Let $(\Omega,\mathcal{F},\mathbb{P})$ be a probability space and $(S,d_S)$ be a compact metric space. A measurable map $X: \Omega \to S$ is called a random element, and its distribution is defined as $\mathbb{P}_X \coloneqq \mathbb{P} \circ X^{-1}$. In addition, we introduce a feature space $(M,d_M)$, which is also a compact metric space. Any measurable map $f : S \to M$ is called a feature function.
+For two random elements $X$ and $Y$, we say a measurable map $T: S \to S$ pushes forward $\mathbb{P}_X$ to $\mathbb{P}_Y$, or simply $X$ to $Y$, if $\mathbb{P}_X(T^{-1}(A)) = \mathbb{P}_Y(A)$ for all $A \in \mathcal{B}(S)$, where $\mathcal{B}(S)$ is the Borel $\sigma$-algebra of $S$. We denote $T_{\#}\mathbb{P}_X = \mathbb{P}_Y$ or $T(X) \overset{d}{=} Y$ if $T$ pushes forward $X$ to $Y$.
 
-%%% Push forward %%%
-For two random functions $X$ and $Y$, we say a measurable map $T: \mathbb{F} \to \mathbb{F}$ \emph{pushes forward} $\mathbb{P}_X$ to $\mathbb{P}_Y$, or simply $X$ to $Y$, if $\mathbb{P}_X(T^{-1}(A)) = \mathbb{P}_Y(A)$ for all $A \in \mathcal{B}(\mathbb{F})$. We denote $T_{\#}\mathbb{P}_X = \mathbb{P}_Y$ or $T(X) \overset{d}{=} Y$ if $T$ pushes forward $X$ to $Y$.
-
-%%% Fused Gromov-Wasserstein divergence %%%
+\paragraph{Fused optimal transport.} For some known feature function $f$, we consider the following problem: for some $0 \leq \alpha \leq 1$,
 \begin{align}
-	\label{eq:FGW}
-	&\mathrm{FGW}(\mathbb{P}_X,\mathbb{P}_Y) \nonumber\\
-	&\coloneqq \inf_{\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)}\left(\int_{\mathcal{X} \times \mathcal{X}}\left[(1-\alpha)(X(x) - Y(y))^2 + \alpha \int_{\mathcal{X} \times \mathcal{X}} \left\vert d(x,x^\prime) - d(y,y^\prime) \right\vert^2\right] d\pi(x,y)d\pi(x^\prime,y^\prime) \right)^{1/2} .
+	\label{eq:fused_optimal_transport}
+	\min_{T: T_{\#}\mathbb{P}_X = \mathbb{P}_Y} (1-\alpha)&\mathbb{E}_{X \sim \mathbb{P}_X} \Big[d_M(f(X),f(T(X)))\Big] \nonumber\\
+	&+ \alpha \mathbb{E}_{(X,X^\prime) \sim \mathbb{P}_X \otimes \mathbb{P}_X}\Big[K_h(X,X^\prime)\left\vert d_S(X,X^\prime) - d_S(T(X),T(X^\prime)) \right\vert^2\Big] ,
 \end{align}
+where $K_h(\cdot,\cdot): S \times S \to [0,\infty)$ is a bounded and symmetric ($K_h(x,x^\prime) = K_h(x^\prime,x)$) kernel with a bandwidth $h > 0$. A solution for \eqref{eq:fused_optimal_transport}, denoted as $T^\ast$, is called a fused optimal transport (OT) plan.
 
 
 \end{document}
