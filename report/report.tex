@@ -104,7 +104,7 @@
 \Crefname{question}{Question}{Questions}
 
 % Note. For the workshop paper template, both \title{} and \workshoptitle{} are required, with the former indicating the paper title shown in the title and the latter indicating the workshop title displayed in the footnote. 
-\title{Continuous Fused Optimal Transport}
+\title{Fused Optimal Transport Plan}
 
 
 % The \author macro works with any number of authors. There are two commands
@@ -163,13 +163,12 @@
 
 \section{Introduction}
 
-\section{Fused Optimal Transport}
+\section{Fused Optimal Transport Plan}
 
 \paragraph{Notations.}
 Let $(\Omega,\mathcal{F},\mathbb{P})$ be a probability space and $(S,d_S)$ a compact metric space. 
 A measurable map $X:\Omega\to S$ is called a random element with distribution $\mathbb{P}_X\coloneqq\mathbb{P}\circ X^{-1}$.
-We also introduce a feature space $M\subset\mathbb{R}^d$ which is compact, and call any one-to-one and continuous $f:S\to M$ a feature function.
-For two probability measures $\mu,\nu$ on $S$, denote by
+We also introduce a feature space $M\subset\mathbb{R}^d$ which is compact, and call any one-to-one and continuous $f:S\to M$ a feature function. Throughout this study, we assume that $\mathrm{diam}(S) = \mathrm{diam}(M) = 1$, where $\mathrm{diam}(A) \coloneqq \sup_{x,x^\prime \in A}d_A(x,x^\prime)$. For two probability measures $\mu,\nu$ on $S$, denote by
 \begin{align*}
 \Pi(\mu,\nu)\;=\;\{\pi\ \text{on }S\times S:\ \text{the marginals are }\mu\text{ and }\nu\}
 \end{align*}
@@ -184,11 +183,11 @@ For $0\le \alpha\le 1$ and a feature function $f$, we consider
 	&+ \alpha\mathbb{E}_{\substack{(X,Y)\sim\pi\\(X',Y')\sim\pi}}
 	\Big[K_h(X,X') \big|d_S(X,X')-d_S(Y,Y')\big|^2\Big],
 \end{align}
-where $K_h:S\times S\to[0,\infty)$ is a bounded, continuous, and symmetric kernel with a bandwidth $h > 0$. We write $\mathcal{S}_\alpha$ for the set of minimizers of \eqref{eq:pi-fused-ot}.
+where $K_h:S\times S\to[0,\infty)$ is a bounded, continuous, and symmetric kernel with a bandwidth $h > 0$. We write $\mathcal{S}_{\alpha,h}$ for the set of minimizers of \eqref{eq:pi-fused-ot}.
 
 \begin{proposition}[Existence of a minimizer]
 	\label{prop:existence}
-	For each $0\le \alpha\le 1$, the problem \eqref{eq:pi-fused-ot} admits at least one minimizer; that is, $\mathcal{S}_\alpha\neq\emptyset$.
+	For each $0\le \alpha\le 1$ and $h > 0$, the problem \eqref{eq:pi-fused-ot} admits at least one minimizer; that is, $\mathcal{S}_{\alpha,h}\neq\emptyset$.
 \end{proposition}
 
 %\begin{proof}[Proof sketch]
@@ -198,19 +197,31 @@ where $K_h:S\times S\to[0,\infty)$ is a bounded, continuous, and symmetric kerne
 %\end{proof}
 
 \paragraph{An equivalent formulation in feature space.}
-Let $Z\coloneqq f(X)$ and $W \coloneqq f(Y)$, and consider couplings $\gamma\in\Pi(\mathbb{P}_Z,\mathbb{P}_W)$ on $M\times M$. 
-Define $K_h^f(z,z')\coloneqq K_h(g(z),g(z'))$ with $g \coloneqq f^{-1}$ on $f(S)$. 
+Let $Z\coloneqq f(X)$ and $W \coloneqq f(Y)$, and consider the set of couplings $\Pi(\mathbb{P}_Z,\mathbb{P}_W)$ on $M\times M$. 
+Define $K_h^g(z,z')\coloneqq K_h(g(z),g(z'))$ with $g \coloneqq f^{-1}$ on $f(S)$. 
 Then, \eqref{eq:pi-fused-ot} is equivalent to
 \begin{align}
 	\label{eq:gamma-fused-ot}
-	\min_{\gamma\in\Pi(\mathbb{P}_Z,\mathbb{P}_W)}\ 
+	\inf_{\gamma\in\Pi(\mathbb{P}_Z,\mathbb{P}_W)}\ 
 	(1-\alpha)&\mathbb{E}_{(Z,W)\sim\gamma}\big[\|Z-W\|_2^2\big] \nonumber\\
 	&+ \alpha\mathbb{E}_{\substack{(Z,W)\sim\gamma\\(Z',W')\sim\gamma}}
-	\!\Big[K_h^f(Z,Z')\big|d_S\big(g(Z),g(Z')\big)-d_S\big(g(W),g(W')\big)\big|^2\Big].
+	\!\Big[K_h^g(Z,Z')\big|d_S\big(g(Z),g(Z')\big)-d_S\big(g(W),g(W')\big)\big|^2\Big].
 \end{align}
-Thus, $\pi$ is feasible for \eqref{eq:pi-fused-ot} if and only if $\gamma=(f\times f)_\#\pi$ is feasible for \eqref{eq:gamma-fused-ot} with the same objective value. In the sequel, we focus on analyzing \eqref{eq:gamma-fused-ot} for mathematical simplicity. 
+Thus, $\pi$ is feasible for \eqref{eq:pi-fused-ot} if and only if $\gamma=(f\times f)_\#\pi$ is feasible for \eqref{eq:gamma-fused-ot} with the same objective value. Let $\mathcal{S}^f_\alpha$ be the solution set for \eqref{eq:gamma-fused-ot}, which is in fact $\mathcal{S}^f_{\alpha,h} = \{(f \times f)_{\#}\pi : \;\pi \in \mathcal{S}_{\alpha,h}\}$. In the sequel, we focus on analyzing \eqref{eq:gamma-fused-ot} for mathematical simplicity.
 
+\section{Local Geometric Preserving Optimal Transport}
 
+It is important to study the role of $K^g_h$ in \eqref{eq:gamma-fused-ot}. To this end, we state some technical assumptions.
+\begin{assumption}
+	\label{ass:kernel-analysis}
+	We assume the followings:
+	\begin{itemize}
+		\item[(A1)] $S$ is an $m$-dimensional compact Riemannian manifold.
+		\item[(A2)] The density of $X$, denoted by $p_X$, is twice-differentiable ($p_X \in \mathcal{C}^2$) and $c \leq p_X \leq C$ for some constants $c,C > 0$.
+		\item[(A3)] $S$ and $M$ are $\mathcal{C}^2$-diffeomorphic, and $f$ is a $\mathcal{C}^2$-diffeomorphism.
+		\item[(A4)] $K_h(x,x^\prime) = h^{-(m+2)}\kappa(d_S(x,x^\prime)/h)$ for some $\kappa : [0,\infty) \to [0,\infty)$, where $\kappa$ is (i) continuous, (ii) bounded, (iii) non-increasing, (iv) compactly supported, and (v) $\int_{\mathbb{R}^m} \kappa(\|u\|) du = 1$.
+	\end{itemize}
+\end{assumption}
 
 
 %%% References %%%
