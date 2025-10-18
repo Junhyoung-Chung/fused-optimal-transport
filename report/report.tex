@@ -164,61 +164,58 @@
 \section{Introduction}
 
 \section{Fused Optimal Transport}
-\paragraph{Notations.} Let $(\Omega,\mathcal{F},\mathbb{P})$ be a probability space and $(S,d_S)$ be a compact metric space. A measurable map $X: \Omega \to S$ is called a random element, and its distribution is defined as $\mathbb{P}_X \coloneqq \mathbb{P} \circ X^{-1}$. In addition, we introduce a feature space $M \subset \mathbb{R}^d$, which is also a compact region. Any measurable map $f : S \to M$ is called a feature function.
-For two random elements $X$ and $Y$, we say a measurable map $T: S \to S$ pushes forward $\mathbb{P}_X$ to $\mathbb{P}_Y$, or simply $X$ to $Y$, if $\mathbb{P}_X(T^{-1}(A)) = \mathbb{P}_Y(A)$ for all $A \in \mathcal{B}(S)$, where $\mathcal{B}(S)$ is the Borel $\sigma$-algebra of $S$. We denote $T_{\#}\mathbb{P}_X = \mathbb{P}_Y$ if $T$ pushes forward $X$ to $Y$.
 
-\paragraph{Fused optimal transport.} For some feature function $f$, we consider the following problem: for $0 \leq \alpha \leq 1$,
+\paragraph{Notations.}
+Let $(\Omega,\mathcal{F},\mathbb{P})$ be a probability space and $(S,d_S)$ a compact metric space. 
+A measurable map $X:\Omega\to S$ is called a random element with distribution $\mathbb{P}_X\coloneqq\mathbb{P}\circ X^{-1}$.
+We also introduce a feature space $M\subset\mathbb{R}^d$ which is compact, and call any one-to-one and continuous $f:S\to M$ a feature function.
+For two probability measures $\mu,\nu$ on $S$, denote by
+\begin{align*}
+\Pi(\mu,\nu)\;=\;\{\pi\ \text{on }S\times S:\ \text{the marginals are }\mu\text{ and }\nu\}
+\end{align*}
+the set of all couplings between $\mu$ and $\nu$. Lastly, we say a measurable map $T: S \to S$ pushes forward $\mu$ to $\nu$ if $\mu(T^{-1}(A)) = \nu(A)$ for all $A \in \mathcal{B}(S)$, where $\mathcal{B}(S)$ is the Borel $\sigma$-algebra of $S$. We denote $T_{\#}\mu = \nu$ if $T$ pushes forward $\mu$ to $\nu$.
+
+\paragraph{Fused optimal transport plan.}
+For $0\le \alpha\le 1$ and a feature function $f$, we consider
 \begin{align}
-	\label{eq:T-fused-optimal-transport}
-	\min_{T: T_{\#}\mathbb{P}_X = \mathbb{P}_Y} (1-\alpha)&\mathbb{E}_{X \sim \mathbb{P}_X} \Big[ \| f(X) - f(T(X)) \|_2^2 \Big] \nonumber\\
-	&+ \alpha \mathbb{E}_{(X,X^\prime) \sim \mathbb{P}_X \otimes \mathbb{P}_X}\Big[K_h(X,X^\prime)\left\vert d_S(X,X^\prime) - d_S(T(X),T(X^\prime)) \right\vert^2\Big] ,
+	\label{eq:pi-fused-ot}
+	\inf_{\pi\in\Pi(\mathbb{P}_X,\mathbb{P}_Y)} 
+	(1-\alpha)&\mathbb{E}_{(X,Y)\sim\pi}\big[\|f(X)-f(Y)\|_2^2\big] \nonumber\\
+	&+ \alpha\mathbb{E}_{\substack{(X,Y)\sim\pi\\(X',Y')\sim\pi}}
+	\Big[K_h(X,X') \big|d_S(X,X')-d_S(Y,Y')\big|^2\Big],
 \end{align}
-where $\|\cdot\|_2$ is a Euclidean norm, and $K_h(\cdot,\cdot): S \times S \to [0,\infty)$ is a bounded symmetric kernel with a bandwidth $h > 0$. Throughout this study, we assume that there exist solutions for \eqref{eq:T-fused-optimal-transport}.
-\begin{assumption}
-	\label{ass:existence}
-	For all $0 \leq \alpha \leq 1$, there exists a non-empty solution set $\mathcal{S}_\alpha$ for \eqref{eq:T-fused-optimal-transport}.
-\end{assumption}
+where $K_h:S\times S\to[0,\infty)$ is a bounded, continuous, and symmetric kernel with a bandwidth $h > 0$. We write $\mathcal{S}_\alpha$ for the set of minimizers of \eqref{eq:pi-fused-ot}.
 
-%%% Conventional OT %%%
-\eqref{eq:T-fused-optimal-transport} reduces to a conventional OT problem when $\alpha = 0$, which have been widely discussed across several literature. In this case, there exists a $\mathbb{P}_X$-a.e. uniqueness solution, denoted as $T^\ast$, which is guaranteed by the Brenier theorem under some regular assumptions.
+\begin{proposition}[Existence of a minimizer]
+	\label{prop:existence}
+	For each $0\le \alpha\le 1$, the problem \eqref{eq:pi-fused-ot} admits at least one minimizer; that is, $\mathcal{S}_\alpha\neq\emptyset$.
+\end{proposition}
 
-\begin{assumption}
-	\label{ass:feature-function}
-	A feature function $f$ is one-to-one and continuous.
-\end{assumption}
+%\begin{proof}[Proof sketch]
+%	Since $S$ is compact, $\Pi(\mathbb{P}_X,\mathbb{P}_Y)$ is tight and compact in the weak topology. 
+%	Both terms in \eqref{eq:pi-fused-ot} are expectations of bounded continuous functions of $(X,Y)$ (and $(X',Y')$) when $f$, $d_S$, and $K_h$ are continuous, hence the objective is weakly lower semicontinuous in $\pi$. 
+%	Therefore a minimizer exists.
+%\end{proof}
 
-\begin{assumption}
-	\label{ass:absolute-continuity}
-	%The distribution of $f(X)$, $\mathbb{P}_{f(X)} = f_{\#}\mathbb{P}_X$, is dominated by the Lebesgue measure.
-	The distribution of $f(X)$ is dominated by the Lebesgue measure.
-\end{assumption}
-
-\begin{assumption}
-	\label{ass:finite-second-moment}
-	$f(X)$ and $f(Y)$ have finite second moments, i.e., $\mathbb{E}[\|f(X)\|_2^2], \mathbb{E}[\|f(Y)\|_2^2] < \infty$.
-\end{assumption}
-
-\begin{lemma}
-	\label{lem:brenier-theorem}
-	Consider a fused optimal transport problem in \eqref{eq:T-fused-optimal-transport} with $\alpha = 0$. Under \cref{ass:feature-function,ass:absolute-continuity,ass:finite-second-moment}, there exists a $\mathbb{P}_X$-a.e. unique solution $T^\ast$.
-\end{lemma}
-\cref{lem:brenier-theorem} illustrates the $\mathbb{P}_X$-a.e. uniqueness of the solution for the special case of \eqref{eq:T-fused-optimal-transport} with $\alpha = 0$, which is the simple application of the Brenier theorem.
-
-%%% Fused OT %%%
-In contrast, global solutions for \eqref{eq:T-fused-optimal-transport} with $\alpha > 0$ may not be unique due to the non-convexity of the second term. However, we can still guarantee that there exists a $T^\ast_\alpha \in \mathcal{S}_\alpha$ near by $T^\ast$ under some required assumptions. To this end, we first introduce the following alternative problem for \eqref{eq:T-fused-optimal-transport}, which is essentially equivalent: for $Z \coloneqq f(X)$,
+\paragraph{An equivalent formulation in feature space.}
+Let $Z\coloneqq f(X)$ and $W \coloneqq f(Y)$, and consider couplings $\gamma\in\Pi(\mathbb{P}_Z,\mathbb{P}_W)$ on $M\times M$. 
+Define $K_h^f(z,z')\coloneqq K_h(g(z),g(z'))$ with $g \coloneqq f^{-1}$ on $f(S)$. 
+Then, \eqref{eq:pi-fused-ot} is equivalent to
 \begin{align}
-	\label{eq:U-fused-optimal-transport}
-	\min_{U: U_{\#}\mathbb{P}_Z = f_{\#}\mathbb{P}_Y} (1-\alpha)\mathbb{E}_{Z \sim \mathbb{P}_Z} \Big[ \| Z - U(Z) \|_2^2 \Big] + \alpha R(U) ,
+	\label{eq:gamma-fused-ot}
+	\min_{\gamma\in\Pi(\mathbb{P}_Z,\mathbb{P}_W)}\ 
+	(1-\alpha)&\mathbb{E}_{(Z,W)\sim\gamma}\big[\|Z-W\|_2^2\big] \nonumber\\
+	&+ \alpha\mathbb{E}_{\substack{(Z,W)\sim\gamma\\(Z',W')\sim\gamma}}
+	\!\Big[K_h^f(Z,Z')\big|d_S\big(g(Z),g(Z')\big)-d_S\big(g(W),g(W')\big)\big|^2\Big].
 \end{align}
-where
-\begin{align}
-	\label{eq:U-risk}
-	R(U) \coloneqq \mathbb{E}_{(Z,Z^\prime) \sim \mathbb{P}_Z \otimes \mathbb{P}_Z}\Big[K_h^f(Z,Z^\prime)\left\vert d_S(g(Z),g(Z^\prime)) - d_S(g(U(Z)),g(U(Z^\prime))) \right\vert^2\Big] .
-\end{align}
-Here $K_h^f(z,z^\prime) \coloneqq K_h(g(z),g(z^\prime))$, and $g \coloneqq f^{-1}$, where $f^{-1}$ is defined on $f(S)$.
-	
+Thus, $\pi$ is feasible for \eqref{eq:pi-fused-ot} if and only if $\gamma=(f\times f)_\#\pi$ is feasible for \eqref{eq:gamma-fused-ot} with the same objective value. In the sequel, we focus on analyzing \eqref{eq:gamma-fused-ot} for mathematical simplicity. 
 
-%However, the following theorem confirms that there exists a $T^\ast_\alpha \in \mathcal{S}_\alpha$ near by $T^\ast$. 
+
+
+
+%%% References %%%
+\bibliographystyle{abbrvnat}
+\bibliography{FOT_references}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%          %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -228,29 +225,29 @@ Here $K_h^f(z,z^\prime) \coloneqq K_h(g(z),g(z^\prime))$, and $g \coloneqq f^{-1
 \appendix
 \section{Appendix}
 
-\subsection{Proof for \cref{lem:brenier-theorem}}
-
-\begin{proof}
-	Since $\alpha = 0$, \eqref{eq:T-fused-optimal-transport} boils down to the following optimization problem:
-	\begin{align}
-		\label{eq:T-ot}
-		\min_{T: T_{\#}\mathbb{P}_X = \mathbb{P}_Y} \mathbb{E}\Big[\|f(X) - f(T(X))\|_2^2\Big] .
-	\end{align}
-	Define $Z \coloneqq f(X)$, whose distribution $\mathbb{P}_Z$ is equal to $f_{\#}\mathbb{P}_X$. In addition, by \cref{ass:feature-function}, we can define $g \coloneqq f^{-1}$, where $f^{-1}$ is defined on $f(S)$. Then, the above problem is equivalent to
-	\begin{align}
-		\label{eq:U-ot}
-		%\min_{T: T_{\#}\mathbb{P}_X = \mathbb{P}_Y} \mathbb{E}\Big[\|Z - (f \circ T \circ g)(Z)\|_2^2\Big] = \min_{U: U_{\#}\mathbb{P}_Z = f_{\#}\mathbb{P}_Y} \mathbb{E}\Big[\|Z - U(Z)\|_2^2\Big] .
-		\min_{U: U_{\#}\mathbb{P}_Z = f_{\#}\mathbb{P}_Y} \mathbb{E}\Big[\|Z - U(Z)\|_2^2\Big] .
-	\end{align}
-	This is because $(f \circ T \circ g)_{\#}\mathbb{P}_Z = f_{\#}\mathbb{P}_Y$ when $T_{\#}\mathbb{P}_X = \mathbb{P}_Y$. Now, the Brenier theorem guarantees that under \cref{ass:absolute-continuity,ass:finite-second-moment}, there exists a $\mathbb{P}_Z$-a.e. unique solution $U^\ast$ for \eqref{eq:U-ot}.
-	
-	Let $T^\ast \coloneqq g \circ U^\ast \circ f$. Observe that $T^\ast_{\#}\mathbb{P}_X = g_{\#}(U^\ast_{\#}\mathbb{P}_Z) = \mathbb{P}_Y$ and that $f(T^\ast(X)) = U^\ast(Z)$, which implies that $T^\ast$ is a solution for \eqref{eq:T-ot}.
-	
-	What remains is to show that $T^\ast$ is $\mathbb{P}_X$-a.e. unique. Suppose that there exists another solution $\tilde{T}^\ast$ such that $\mathbb{P}(T^\ast(X) \neq \tilde{T}^\ast(X)) > 0$. Then,
-	\begin{align*}
-		\mathbb{P}(T^\ast(X) \neq \tilde{T}^\ast(X)) = \mathbb{P}(g(U^\ast(Z)) \neq (\tilde{T}^\ast \circ g)(Z)) = \mathbb{P}(U^\ast(Z) \neq (f \circ \tilde{T}^\ast \circ g)(Z)) > 0 .
-	\end{align*}
-	Considering that $\tilde{U}^\ast \coloneqq f \circ \tilde{T}^\ast \circ g$ is also a solution for \eqref{eq:U-ot}, this contradicts to the fact that $U^\ast$ is $\mathbb{P}_Z$-a.e. unique.
-\end{proof}
+%\subsection{Proof for \cref{lem:brenier}}
+%
+%\begin{proof}
+%	Since $\alpha = 0$, \eqref{eq:T-fused-optimal-transport} boils down to the following optimization problem:
+%	\begin{align}
+%		\label{eq:T-ot}
+%		\min_{T: T_{\#}\mathbb{P}_X = \mathbb{P}_Y} \mathbb{E}\Big[\|f(X) - f(T(X))\|_2^2\Big] .
+%	\end{align}
+%	Define $Z \coloneqq f(X)$, whose distribution $\mathbb{P}_Z$ is equal to $f_{\#}\mathbb{P}_X$. In addition, by \cref{ass:feature-function}, we can define $g \coloneqq f^{-1}$, where $f^{-1}$ is defined on $f(S)$. Then, the above problem is equivalent to
+%	\begin{align}
+%		\label{eq:U-ot}
+%		%\min_{T: T_{\#}\mathbb{P}_X = \mathbb{P}_Y} \mathbb{E}\Big[\|Z - (f \circ T \circ g)(Z)\|_2^2\Big] = \min_{U: U_{\#}\mathbb{P}_Z = f_{\#}\mathbb{P}_Y} \mathbb{E}\Big[\|Z - U(Z)\|_2^2\Big] .
+%		\min_{U: U_{\#}\mathbb{P}_Z = f_{\#}\mathbb{P}_Y} \mathbb{E}\Big[\|Z - U(Z)\|_2^2\Big] .
+%	\end{align}
+%	This is because $(f \circ T \circ g)_{\#}\mathbb{P}_Z = f_{\#}\mathbb{P}_Y$ when $T_{\#}\mathbb{P}_X = \mathbb{P}_Y$. Now, the Brenier theorem guarantees that under \cref{ass:absolute-continuity,ass:finite-second-moment}, there exists a $\mathbb{P}_Z$-a.e. unique solution $U^\ast$ for \eqref{eq:U-ot}.
+%	
+%	Let $T^\ast \coloneqq g \circ U^\ast \circ f$. Observe that $T^\ast_{\#}\mathbb{P}_X = g_{\#}(U^\ast_{\#}\mathbb{P}_Z) = \mathbb{P}_Y$ and that $f(T^\ast(X)) = U^\ast(Z)$, which implies that $T^\ast$ is a solution for \eqref{eq:T-ot}.
+%	
+%	What remains is to show that $T^\ast$ is $\mathbb{P}_X$-a.e. unique. Suppose that there exists another solution $\tilde{T}^\ast$ such that $\mathbb{P}(T^\ast(X) \neq \tilde{T}^\ast(X)) > 0$. Then,
+%	\begin{align*}
+%		\mathbb{P}(T^\ast(X) \neq \tilde{T}^\ast(X)) = \mathbb{P}(g(U^\ast(Z)) \neq (\tilde{T}^\ast \circ g)(Z)) = \mathbb{P}(U^\ast(Z) \neq (f \circ \tilde{T}^\ast \circ g)(Z)) > 0 .
+%	\end{align*}
+%	Considering that $\tilde{U}^\ast \coloneqq f \circ \tilde{T}^\ast \circ g$ is also a solution for \eqref{eq:U-ot}, this contradicts to the fact that $U^\ast$ is $\mathbb{P}_Z$-a.e. unique.
+%\end{proof}
 
 \end{document}
