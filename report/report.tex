@@ -103,6 +103,8 @@
 \crefname{question}{Question}{Questions}
 \Crefname{question}{Question}{Questions}
 
+\DeclareMathOperator*{\argmin}{arg\,min}
+
 % Note. For the workshop paper template, both \title{} and \workshoptitle{} are required, with the former indicating the paper title shown in the title and the latter indicating the workshop title displayed in the footnote. 
 \title{Fused Optimal Transport Plan}
 
@@ -180,8 +182,8 @@ For $0\le \alpha\le 1$ and a feature function $f$, we consider
 	\label{eq:pi-fused-ot}
 	\inf_{\pi\in\Pi(\mathbb{P}_X,\mathbb{P}_Y)} 
 	(1-\alpha)&\mathbb{E}_{(X,Y)\sim\pi}\big[\|f(X)-f(Y)\|_2^2\big] \nonumber\\
-	&+ \alpha\mathbb{E}_{\substack{(X,Y)\sim\pi\\(X',Y')\sim\pi}}
-	\Big[K_h(X,X') \big|d_S(X,X')-d_S(Y,Y')\big|^2\Big],
+	&+ \alpha\mathbb{E}_{\substack{(X,Y)\sim\pi\\(X^\prime,Y^\prime)\sim\pi}}
+	\Big[K_h(X,X^\prime) \big|d_S(X,X^\prime)-d_S(Y,Y^\prime)\big|^2\Big],
 \end{align}
 where $K_h:S\times S\to[0,\infty)$ is a bounded, continuous, and symmetric kernel with a bandwidth $h > 0$. We write $\mathcal{S}_{\alpha,h}$ for the set of minimizers of \eqref{eq:pi-fused-ot}.
 
@@ -196,22 +198,22 @@ where $K_h:S\times S\to[0,\infty)$ is a bounded, continuous, and symmetric kerne
 %	Therefore a minimizer exists.
 %\end{proof}
 
-\paragraph{An equivalent formulation in feature space.}
-Let $Z\coloneqq f(X)$ and $W \coloneqq f(Y)$, and consider the set of couplings $\Pi(\mathbb{P}_Z,\mathbb{P}_W)$ on $M\times M$. 
-Define $K_h^g(z,z')\coloneqq K_h(g(z),g(z'))$ with $g \coloneqq f^{-1}$ on $f(S)$. 
-Then, \eqref{eq:pi-fused-ot} is equivalent to
-\begin{align}
-	\label{eq:gamma-fused-ot}
-	\inf_{\gamma\in\Pi(\mathbb{P}_Z,\mathbb{P}_W)}\ 
-	(1-\alpha)&\mathbb{E}_{(Z,W)\sim\gamma}\big[\|Z-W\|_2^2\big] \nonumber\\
-	&+ \alpha\mathbb{E}_{\substack{(Z,W)\sim\gamma\\(Z',W')\sim\gamma}}
-	\!\Big[K_h^g(Z,Z')\big|d_S\big(g(Z),g(Z')\big)-d_S\big(g(W),g(W')\big)\big|^2\Big].
-\end{align}
-Thus, $\pi$ is feasible for \eqref{eq:pi-fused-ot} if and only if $\gamma=(f\times f)_\#\pi$ is feasible for \eqref{eq:gamma-fused-ot} with the same objective value. Let $\mathcal{S}^f_\alpha$ be the solution set for \eqref{eq:gamma-fused-ot}, which is in fact $\mathcal{S}^f_{\alpha,h} = \{(f \times f)_{\#}\pi : \;\pi \in \mathcal{S}_{\alpha,h}\}$. In the sequel, we focus on analyzing \eqref{eq:gamma-fused-ot} for mathematical simplicity.
+%\paragraph{An equivalent formulation in feature space.}
+%Let $Z\coloneqq f(X)$ and $W \coloneqq f(Y)$, and consider the set of couplings $\Pi(\mathbb{P}_Z,\mathbb{P}_W)$ on $M\times M$. 
+%Define $K_h^g(z,z')\coloneqq K_h(g(z),g(z'))$ with $g \coloneqq f^{-1}$ on $f(S)$. 
+%Then, \eqref{eq:pi-fused-ot} is equivalent to
+%\begin{align}
+%	\label{eq:gamma-fused-ot}
+%	\inf_{\gamma\in\Pi(\mathbb{P}_Z,\mathbb{P}_W)}\ 
+%	(1-\alpha)&\mathbb{E}_{(Z,W)\sim\gamma}\big[\|Z-W\|_2^2\big] \nonumber\\
+%	&+ \alpha\mathbb{E}_{\substack{(Z,W)\sim\gamma\\(Z',W')\sim\gamma}}
+%	\!\Big[K_h^g(Z,Z')\big|d_S\big(g(Z),g(Z')\big)-d_S\big(g(W),g(W')\big)\big|^2\Big].
+%\end{align}
+%Thus, $\pi$ is feasible for \eqref{eq:pi-fused-ot} if and only if $\gamma=(f\times f)_\#\pi$ is feasible for \eqref{eq:gamma-fused-ot} with the same objective value. Let $\mathcal{S}^f_\alpha$ be the solution set for \eqref{eq:gamma-fused-ot}, which is in fact $\mathcal{S}^f_{\alpha,h} = \{(f \times f)_{\#}\pi : \;\pi \in \mathcal{S}_{\alpha,h}\}$. In the sequel, we focus on analyzing \eqref{eq:gamma-fused-ot} for mathematical simplicity.
 
 \section{Local Geometric Preserving Optimal Transport}
 
-It is important to study the role of $K^g_h$ in \eqref{eq:gamma-fused-ot}. To this end, we state some technical assumptions.
+This section discusses another method to learn an optimal transport while preserving local geometry, which actually coincides with \eqref{eq:pi-fused-ot} as $h \to 0$. We will investigate this later. We first state some technical assumptions.
 \begin{assumption}
 	\label{ass:kernel-analysis}
 	We assume the followings:
@@ -222,6 +224,25 @@ It is important to study the role of $K^g_h$ in \eqref{eq:gamma-fused-ot}. To th
 		\item[(A4)] $K_h(x,x^\prime) = h^{-(m+2)}\kappa(d_S(x,x^\prime)/h)$ for some $\kappa : [0,\infty) \to [0,\infty)$, where $\kappa$ is (i) continuous, (ii) bounded, (iii) non-increasing, (iv) compactly supported, and (v) $\int_{\mathbb{R}^m} \kappa(\|u\|) du = 1$.
 	\end{itemize}
 \end{assumption}
+
+Now, consider the following problem:
+\begin{align}
+	\label{eq:LGP-ot}
+	\min_{T \in \mathcal{C}^1: T_{\#}\mathbb{P}_X = \mathbb{P}_Y} (1-\alpha)\mathbb{E}_{X \sim \mathbb{P}_X}\big[\|f(X)-f(T(X))\|_2^2\big] + \alpha\int_{S} \|(\mathcal{J}T)^\top(\mathcal{J}T) - I\|_F^2  .
+\end{align}
+
+\begin{theorem}
+	For $h > 0$, let $R^\pi(h)$ be defined as
+	\begin{align*}
+		R^\pi(h) \coloneqq \mathbb{E}_{\substack{(X,Y)\sim\pi\\(X',Y')\sim\pi}} \Big[K_h(X,X') \big|d_S(X,X')-d_S(Y,Y')\big|^2\Big] .
+	\end{align*}
+	Under \cref{ass:kernel-analysis}, $R^\pi(h)$ converges to a limit $R^\pi(0)$ as $h \to 0$. In particular,
+	\begin{align*}
+		R^\pi(0) = ??
+	\end{align*}
+\end{theorem}
+
+
 
 
 %%% References %%%
