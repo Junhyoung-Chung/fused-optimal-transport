@@ -106,7 +106,7 @@
 \DeclareMathOperator*{\argmin}{arg\,min}
 
 % Note. For the workshop paper template, both \title{} and \workshoptitle{} are required, with the former indicating the paper title shown in the title and the latter indicating the workshop title displayed in the footnote. 
-\title{Fused Optimal Transport Plan}
+\title{Learning Geometry Preserving Optimal Transport Plan via Convex Optimization}
 
 
 % The \author macro works with any number of authors. There are two commands
@@ -169,7 +169,7 @@ Optimal transport (OT) provides a powerful mathematical framework for comparing 
 
 To address this, we consider a \emph{fused optimal transport} (FOT) formulation, which simultaneously accounts for feature similarity and spatial coherence through a kernel-weighted coupling cost. This formulation generalizes both the classical quadratic OT and the Gromov--Wasserstein (GW) transport, providing a flexible interpolation between them. The rest of this section introduces the formal setup, notation, and basic existence results for the fused optimal transport plan.
 
-\section{Fused Optimal Transport Plan}
+\section{Methodology}
 
 %%%% Notations %%%%
 \paragraph{Notations.}
@@ -179,50 +179,27 @@ We also introduce a feature space $M\subset\mathbb{R}^d$ which is compact, and c
 \begin{align*}
 	\Pi(\mu,\nu) \coloneqq \{\pi\ \text{on }S\times S:\ \text{the marginals are }\mu\text{ and }\nu\}
 \end{align*}
-the set of all couplings between $\mu$ and $\nu$. Lastly, we say a measurable map $T: S \to S$ pushes forward $\mu$ to $\nu$ if $\mu(T^{-1}(A)) = \nu(A)$ for all $A \in \mathcal{B}(S)$, where $\mathcal{B}(S)$ is the Borel $\sigma$-algebra of $S$. We denote $T_{\#}\mu = \nu$ if $T$ pushes forward $\mu$ to $\nu$.
+the set of all couplings between $\mu$ and $\nu$. By the disintegration theorem, for $\pi \in \Pi(\mu,\nu)$ there exists a Markov kernel $k(,\cdot,\cdot): \mathcal{B}(S) \times S \to [0,1]$ such that $\pi(dx,dy) = k(dy,x)\mu(dx)$, where $\mathcal{B}(S)$ is the Borel $\sigma$-algebra of $S$.
+%Lastly, we say a measurable map $T: S \to S$ pushes forward $\mu$ to $\nu$ if $\mu(T^{-1}(A)) = \nu(A)$ for all $A \in \mathcal{B}(S)$, where $\mathcal{B}(S)$ is the Borel $\sigma$-algebra of $S$. We denote $T_{\#}\mu = \nu$ if $T$ pushes forward $\mu$ to $\nu$.
 
-%%%% Fused OT %%%%
-\paragraph{Fused optimal transport plan.}
-For $0\le \alpha\le 1$ and a feature function $f$, we consider
+%%%% Fused GW %%%%
+\paragraph{Fused Gromov-Wasserstein Discrepancy.}
+For $0\le \alpha\le 1$ and a feature function $f$, \citet{vayer2020fused} propose the following optimization problem:
 \begin{align}
 	\label{eq:pi-fused-ot}
 	\inf_{\pi\in\Pi(\mathbb{P}_X,\mathbb{P}_Y)} 
 	(1-\alpha)&\mathbb{E}_{(X,Y)\sim\pi}\big[\|f(X)-f(Y)\|_2^2\big] \nonumber\\
 	&+ \alpha\mathbb{E}_{\substack{(X,Y)\sim\pi\\(X^\prime,Y^\prime)\sim\pi}}
-	\Big[K_h(X,X^\prime) \big|d_S(X,X^\prime)-d_S(Y,Y^\prime)\big|^2\Big],
+	\Big[\big|d_S(X,X^\prime)-d_S(Y,Y^\prime)\big|^2\Big] .
 \end{align}
-where $K_h:S\times S\to[0,\infty)$ is a bounded, continuous, and symmetric kernel with bandwidth $h > 0$. The first term enforces feature-wise alignment via $f$, while the second encourages structural consistency under the spatial metric $d_S$, weighted by the proximity kernel $K_h$. When $\alpha = 0$, the problem reduces to classical quadratic OT; when $\alpha = 1$, it approaches the Gromov–Wasserstein setting emphasizing relational geometry.
-
-We write $\mathcal{S}_{\alpha,h}$ for the set of minimizers of \eqref{eq:pi-fused-ot}, which is guaranteed to be non-empty by the following proposition.
+The first term enforces feature-wise alignment via $f$, while the second encourages structural consistency under the spatial metric $d_S$. When $\alpha = 0$, the problem reduces to classical quadratic OT; when $\alpha = 1$, it approaches the Gromov–Wasserstein setting emphasizing relational geometry.
 \begin{proposition}[Existence of a minimizer]
 	\label{prop:existence}
-	For each $0\le \alpha\le 1$ and $h > 0$, $\mathcal{S}_{\alpha,h}$ is a non-empty compact set.
-	%For each $0\le \alpha\le 1$ and $h > 0$, the problem \eqref{eq:pi-fused-ot} admits at least one minimizer; that is, $\mathcal{S}_{\alpha,h}\neq\emptyset$.
+	For each $0\leq \alpha \leq 1$, \eqref{eq:pi-fused-ot} has at least one minimzers; that is, \eqref{eq:pi-fused-ot} is solvable.
 \end{proposition}
-The existence follows from standard weak compactness of the set of couplings $\Pi(\mathbb{P}_X,\mathbb{P}_Y)$ and lower semicontinuity of the objective functional. The detailed proof can be found in Appendix. 
+The existence follows from standard weak compactness of the set of couplings $\Pi(\mathbb{P}_X,\mathbb{P}_Y)$ and lower semicontinuity of the objective functional. However, the minimizer of \eqref{eq:pi-fused-ot} is not necessarily unique, and due to the non-convexity of the second (structural) term, the optimization landscape may contain multiple local minima. Consequently, standard numerical algorithms can only guarantee convergence to stationary or locally optimal solutions, rather than the global optimum. This highlights the importance of developing a convex reformulation or an appropriate convex relaxation of the fused Gromov–Wasserstein problem to ensure computational tractability and theoretical robustness.
 
-However, due to the non-convexity of the second term in \eqref{eq:pi-fused-ot}, $S_{\alpha,h}$ can possibly contain more than one element.
-
-
-
-%\begin{proof}[Proof sketch]
-%	Since $S$ is compact, $\Pi(\mathbb{P}_X,\mathbb{P}_Y)$ is tight and compact in the weak topology. 
-%	Both terms in \eqref{eq:pi-fused-ot} are expectations of bounded continuous functions of $(X,Y)$ (and $(X',Y')$) when $f$, $d_S$, and $K_h$ are continuous, hence the objective is weakly lower semicontinuous in $\pi$. 
-%	Therefore a minimizer exists.
-%\end{proof}
-
-%\paragraph{An equivalent formulation in feature space.}
-%Let $Z\coloneqq f(X)$ and $W \coloneqq f(Y)$, and consider the set of couplings $\Pi(\mathbb{P}_Z,\mathbb{P}_W)$ on $M\times M$. 
-%Define $K_h^g(z,z')\coloneqq K_h(g(z),g(z'))$ with $g \coloneqq f^{-1}$ on $f(S)$. 
-%Then, \eqref{eq:pi-fused-ot} is equivalent to
-%\begin{align}
-%	\label{eq:gamma-fused-ot}
-%	\inf_{\gamma\in\Pi(\mathbb{P}_Z,\mathbb{P}_W)}\ 
-%	(1-\alpha)&\mathbb{E}_{(Z,W)\sim\gamma}\big[\|Z-W\|_2^2\big] \nonumber\\
-%	&+ \alpha\mathbb{E}_{\substack{(Z,W)\sim\gamma\\(Z',W')\sim\gamma}}
-%	\!\Big[K_h^g(Z,Z')\big|d_S\big(g(Z),g(Z')\big)-d_S\big(g(W),g(W')\big)\big|^2\Big].
-%\end{align}
-%Thus, $\pi$ is feasible for \eqref{eq:pi-fused-ot} if and only if $\gamma=(f\times f)_\#\pi$ is feasible for \eqref{eq:gamma-fused-ot} with the same objective value. Let $\mathcal{S}^f_\alpha$ be the solution set for \eqref{eq:gamma-fused-ot}, which is in fact $\mathcal{S}^f_{\alpha,h} = \{(f \times f)_{\#}\pi : \;\pi \in \mathcal{S}_{\alpha,h}\}$. In the sequel, we focus on analyzing \eqref{eq:gamma-fused-ot} for mathematical simplicity.
+\paragraph{Proposed method.}
 
 
 
@@ -239,29 +216,5 @@ However, due to the non-convexity of the second term in \eqref{eq:pi-fused-ot}, 
 \appendix
 \section{Appendix}
 
-%\subsection{Proof for \cref{lem:brenier}}
-%
-%\begin{proof}
-%	Since $\alpha = 0$, \eqref{eq:T-fused-optimal-transport} boils down to the following optimization problem:
-%	\begin{align}
-%		\label{eq:T-ot}
-%		\min_{T: T_{\#}\mathbb{P}_X = \mathbb{P}_Y} \mathbb{E}\Big[\|f(X) - f(T(X))\|_2^2\Big] .
-%	\end{align}
-%	Define $Z \coloneqq f(X)$, whose distribution $\mathbb{P}_Z$ is equal to $f_{\#}\mathbb{P}_X$. In addition, by \cref{ass:feature-function}, we can define $g \coloneqq f^{-1}$, where $f^{-1}$ is defined on $f(S)$. Then, the above problem is equivalent to
-%	\begin{align}
-%		\label{eq:U-ot}
-%		%\min_{T: T_{\#}\mathbb{P}_X = \mathbb{P}_Y} \mathbb{E}\Big[\|Z - (f \circ T \circ g)(Z)\|_2^2\Big] = \min_{U: U_{\#}\mathbb{P}_Z = f_{\#}\mathbb{P}_Y} \mathbb{E}\Big[\|Z - U(Z)\|_2^2\Big] .
-%		\min_{U: U_{\#}\mathbb{P}_Z = f_{\#}\mathbb{P}_Y} \mathbb{E}\Big[\|Z - U(Z)\|_2^2\Big] .
-%	\end{align}
-%	This is because $(f \circ T \circ g)_{\#}\mathbb{P}_Z = f_{\#}\mathbb{P}_Y$ when $T_{\#}\mathbb{P}_X = \mathbb{P}_Y$. Now, the Brenier theorem guarantees that under \cref{ass:absolute-continuity,ass:finite-second-moment}, there exists a $\mathbb{P}_Z$-a.e. unique solution $U^\ast$ for \eqref{eq:U-ot}.
-%	
-%	Let $T^\ast \coloneqq g \circ U^\ast \circ f$. Observe that $T^\ast_{\#}\mathbb{P}_X = g_{\#}(U^\ast_{\#}\mathbb{P}_Z) = \mathbb{P}_Y$ and that $f(T^\ast(X)) = U^\ast(Z)$, which implies that $T^\ast$ is a solution for \eqref{eq:T-ot}.
-%	
-%	What remains is to show that $T^\ast$ is $\mathbb{P}_X$-a.e. unique. Suppose that there exists another solution $\tilde{T}^\ast$ such that $\mathbb{P}(T^\ast(X) \neq \tilde{T}^\ast(X)) > 0$. Then,
-%	\begin{align*}
-%		\mathbb{P}(T^\ast(X) \neq \tilde{T}^\ast(X)) = \mathbb{P}(g(U^\ast(Z)) \neq (\tilde{T}^\ast \circ g)(Z)) = \mathbb{P}(U^\ast(Z) \neq (f \circ \tilde{T}^\ast \circ g)(Z)) > 0 .
-%	\end{align*}
-%	Considering that $\tilde{U}^\ast \coloneqq f \circ \tilde{T}^\ast \circ g$ is also a solution for \eqref{eq:U-ot}, this contradicts to the fact that $U^\ast$ is $\mathbb{P}_Z$-a.e. unique.
-%\end{proof}
 
 \end{document}
