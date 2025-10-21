@@ -57,6 +57,8 @@
 \usepackage{mathtools}
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{cleveref}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}{Lemma} 
@@ -104,9 +106,10 @@
 \Crefname{question}{Question}{Questions}
 
 \DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
 
 % Note. For the workshop paper template, both \title{} and \workshoptitle{} are required, with the former indicating the paper title shown in the title and the latter indicating the workshop title displayed in the footnote. 
-\title{Learning Geometry Preserving Optimal Transport Plan via Convex Optimization}
+\title{Learning Geometry Preserving Optimal Transport Plan via Convex Relaxation}
 
 
 % The \author macro works with any number of authors. There are two commands
@@ -173,14 +176,14 @@ To address this, we consider a \emph{fused optimal transport} (FOT) formulation,
 
 %%%% Notations %%%%
 \paragraph{Notations.}
-Let $(\Omega,\mathcal{F},\mathbb{P})$ be a probability space and $(S,d_S)$ a compact metric space. 
-A measurable map $X:\Omega\to S$ is called a random element with distribution $\mathbb{P}_X\coloneqq\mathbb{P}\circ X^{-1}$.
+Let $(\Omega,\mathcal{F},\mathbb{P})$ be a probability space and $(S,d_S)$ be a compact metric space. 
+A measurable map $X:\Omega\to S$ is called a random element with distribution $\mathbb{P}_X\coloneqq\mathbb{P}\circ X^{-1}$. Denote $L^2(S,\mathbb{P}_X)$ by the Hilbert space of real-valued, square integrable functions on $S$ with respect to $\mathbb{P}_X$.
 We also introduce a feature space $M\subset\mathbb{R}^d$ which is compact, and call any one-to-one and continuous $f:S\to M$ a feature function. Throughout this study, we assume that $\mathrm{diam}(S) = \mathrm{diam}(M) = 1$, where $\mathrm{diam}(A) \coloneqq \sup_{x,x^\prime \in A}d_A(x,x^\prime)$. For two probability measures $\mu,\nu$ on $S$, denote by
 \begin{align*}
-	\Pi(\mu,\nu) \coloneqq \{\pi\ \text{on }S\times S:\ \text{the marginals are }\mu\text{ and }\nu\}
+	\Pi(\mu,\nu) \coloneqq \{\pi\ \text{on }S\times S:\ \text{the marginals are $\mu$ and $\nu$}\}
 \end{align*}
-the set of all couplings between $\mu$ and $\nu$. By the disintegration theorem, for $\pi \in \Pi(\mu,\nu)$ there exists a Markov kernel $k(,\cdot,\cdot): \mathcal{B}(S) \times S \to [0,1]$ such that $\pi(dx,dy) = k(dy,x)\mu(dx)$, where $\mathcal{B}(S)$ is the Borel $\sigma$-algebra of $S$.
-%Lastly, we say a measurable map $T: S \to S$ pushes forward $\mu$ to $\nu$ if $\mu(T^{-1}(A)) = \nu(A)$ for all $A \in \mathcal{B}(S)$, where $\mathcal{B}(S)$ is the Borel $\sigma$-algebra of $S$. We denote $T_{\#}\mu = \nu$ if $T$ pushes forward $\mu$ to $\nu$.
+the set of all couplings between $\mu$ and $\nu$. Given an arbitrary coupling $\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)$, the conditional expectation operator $T_{\pi}: L^2(S,\mathbb{P}_Y) \to L^2(S,\mathbb{P}_X)$ is defined as $(T_{\pi}g)(x) \coloneqq \mathbb{E}[g(Y) \mid X = x]$ for any $g \in L^2(S,\mathbb{P}_Y)$. Lastly, we say a measurable map $T: S \to S$ pushes forward $\mu$ to $\nu$ if $\mu(T^{-1}(A)) = \nu(A)$ for all $A \in \mathcal{B}(S)$, where $\mathcal{B}(S)$ is the Borel $\sigma$-algebra of $S$. We denote $T_{\#}\mu = \nu$ if $T$ pushes forward $\mu$ to $\nu$.
+%By the disintegration theorem, for $\pi \in \Pi(\mu,\nu)$ there exists a Markov kernel $k(,\cdot,\cdot): \mathcal{B}(S) \times S \to [0,1]$ such that $\pi(dx,dy) = k(dy,x)\mu(dx)$, where $\mathcal{B}(S)$ is the Borel $\sigma$-algebra of $S$.
 
 %%%% Fused GW %%%%
 \paragraph{Fused Gromov-Wasserstein Discrepancy.}
@@ -192,14 +195,123 @@ For $0\le \alpha\le 1$ and a feature function $f$, \citet{vayer2020fused} propos
 	&+ \alpha\mathbb{E}_{\substack{(X,Y)\sim\pi\\(X^\prime,Y^\prime)\sim\pi}}
 	\Big[\big|d_S(X,X^\prime)-d_S(Y,Y^\prime)\big|^2\Big] .
 \end{align}
-The first term enforces feature-wise alignment via $f$, while the second encourages structural consistency under the spatial metric $d_S$. When $\alpha = 0$, the problem reduces to classical quadratic OT; when $\alpha = 1$, it approaches the Gromov–Wasserstein setting emphasizing relational geometry.
+The first term enforces feature-wise alignment via $f$, while the second encourages structural consistency under the spatial metric $d_S$. When $\alpha = 0$, the problem reduces to classical quadratic OT; when $\alpha = 1$, it coincides with the Gromov–Wasserstein setting emphasizing relational geometry.
 \begin{proposition}[Existence of a minimizer]
 	\label{prop:existence}
-	For each $0\leq \alpha \leq 1$, \eqref{eq:pi-fused-ot} has at least one minimzers; that is, \eqref{eq:pi-fused-ot} is solvable.
+	For each $0\leq \alpha \leq 1$, \eqref{eq:pi-fused-ot} admits at least one minimizer; that is, \eqref{eq:pi-fused-ot} is solvable.
 \end{proposition}
+\begin{proof}
+	The proof can be found in \citet{vayer2020fused}.
+\end{proof}
 The existence follows from standard weak compactness of the set of couplings $\Pi(\mathbb{P}_X,\mathbb{P}_Y)$ and lower semicontinuity of the objective functional. However, the minimizer of \eqref{eq:pi-fused-ot} is not necessarily unique, and due to the non-convexity of the second (structural) term, the optimization landscape may contain multiple local minima. Consequently, standard numerical algorithms can only guarantee convergence to stationary or locally optimal solutions, rather than the global optimum. This highlights the importance of developing a convex reformulation or an appropriate convex relaxation of the fused Gromov–Wasserstein problem to ensure computational tractability and theoretical robustness.
 
-\paragraph{Proposed method.}
+%%% Proposed method %%%
+\paragraph{Proposed method.} Our proposed method introduces a surrogate loss for the second term in \eqref{eq:pi-fused-ot}, thereby ensuring that the problem is convex.
+\begin{definition}[Distance potential operator]
+	\label{def:distance-potential}
+	Let $(S,d_S,\mathbb{P}_X)$ be a compact metric space. The \emph{distance potential operator} $D_X : L^2(S,\mathbb{P}_X) \to L^2(S,\mathbb{P}_X)$ is defined by
+	\begin{align*}
+		(D_Xf)(x) \coloneqq \mathbb{E}\left[d_S(x,X)f(X)\right] = \int_S d_S(x,y)\, f(y)\, \mathbb{P}_X(dy), \quad \forall f \in L^2(S,\mathbb{P}_X),\ \forall x \in S .
+	\end{align*}
+\end{definition}
+The distance potential operator is a special case of a Hilbert-Schmidt operator. Intuitively, $(D_X f)(x)$ represents a distance-weighted average of $f$ with respect to the point $x$.
+
+\begin{theorem}
+	\label{thm:convex-relaxation}
+	For $\lambda \geq 0$ and a feature function $f$, consider the optimization problem 
+	\begin{align}
+		\label{eq:proposed-method}
+		\inf_{\pi\in\Pi(\mathbb{P}_X,\mathbb{P}_Y)} \mathbb{E}_{(X,Y)\sim\pi}\big[\|f(X)-f(Y)\|_2^2\big] + \frac{\lambda}{2} \| D_XT_\pi - T_\pi D_Y \|_{\mathrm{HS}}^2 ,
+	\end{align}
+	where $\|\cdot\|_{\mathrm{HS}}^2$ is a Hilbert-Schmidt norm. Then, \eqref{eq:proposed-method} is a convex problem.
+\end{theorem}
+\begin{proof}
+	See Appendix~\ref{pf:thm:convex-relaxation}.
+\end{proof}
+\cref{thm:convex-relaxation} establishes that the proposed optimization problem \eqref{eq:proposed-method} is convex with respect to the coupling $\pi$. This stems from the fact that the first term (feature-wise alignment) is linear in $\pi$, and the second regularization term is also a convex function of $\pi$. The latter holds because the map $\pi \mapsto T_\pi$ is affine, and the squared Hilbert-Schmidt norm $\|\cdot\|_{\mathrm{HS}}^2$ is a convex function; their composition thus preserves convexity (as detailed in Appendix~\ref{pf:thm:convex-relaxation}). Consequently, this problem formulation circumvents the computational challenges arising from non-convexity, which are inherent to the original Fused Gromov-Wasserstein problem~\eqref{eq:pi-fused-ot}, and guarantees that a global optimum can be efficiently found.
+
+\begin{corollary}
+	\label{cor:regularization-term}
+	For any $\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)$,
+	\begin{align*}
+		\| D_XT_{\pi} - T_{\pi}D_Y \|_{\mathrm{HS}}^2 = \int_S\int_S \Gamma^\pi(x,y)^2\mathbb{P}_X(dx)\mathbb{P}_Y(dy) ,
+	\end{align*}
+	where $K_1^\pi(x,y) \coloneqq \mathbb{E}_\pi[d_S(x,X) \mid Y = y]$, $K_2^\pi(x,y) \coloneqq \mathbb{E}_\pi[d_S(y,Y) \mid X = x]$, and $\Gamma^\pi(x,y) \coloneqq K_1^\pi(x,y) - K_2^\pi(x,y)$.
+\end{corollary}
+\begin{proof}
+	See Appendix~\ref{pf:cor:regularization-term}.
+\end{proof}
+Corollary~\ref{cor:regularization-term} provides an explicit expression for the regularization term from Theorem~\ref{thm:convex-relaxation}, reformulating it as the squared integral of a kernel function $\Gamma^\pi(x,y)$. This kernel $\Gamma^\pi$ measures the discrepancy between two conditional expected distances: $K_1^\pi(x,y)$ and $K_2^\pi(x,y)$. Specifically, $K_1^\pi(x,y)$ represents the average distance from $x$ to the $X$'s coupled with $y$ (given $Y=y$), while $K_2^\pi(x,y)$ is the average distance from $y$ to the $Y$'s coupled with $x$ (given $X=x$). The regularization term can thus be interpreted as a metric that quantifies the symmetric alignment of these ``cross-spatial" average distances induced by the coupling $\pi$.
+
+%%% Illustration %%%
+\begin{proposition}
+	\label{prop:solution}
+	Let $T: S \to S$ be an isometry and $\pi = (\mathrm{Id},T)_{\#}\mathbb{P}_X$. Then, $\|D_XT_{\pi} - T_{\pi}D_Y\|_{\mathrm{HS}}^2 = 0$.
+\end{proposition}
+\begin{proof}
+	First, note that $Y \overset{a.s.}{=} T(X)$. Our goal is to show that $\Gamma^\pi(x,y) = 0$ for $\pi$-a.e. $(x,y) \in S^2$.
+	\begin{align*}
+		K_1^\pi(x,y) \overset{a.s.}{=} d_S(x,T^{-1}(y)) = d_S(T(x),y) \overset{a.s.}{=} \mathbb{E}\left[d_S(Y,y) \mid X = x\right] = K_2^\pi(x,y) .
+	\end{align*}
+\end{proof}
+\cref{prop:solution} provides a crucial validation for the proposed regularization term, demonstrating its consistency with the goals of geometric structure preservation. It shows that if the coupling $\pi$ is induced by a deterministic isometry $T$ (i.e., $Y=T(X)$ almost surely), which represents a perfect alignment of the metric structures, our regularization term vanishes completely. This confirms that our convex surrogate correctly identifies such ideal, structure-preserving maps as optimal solutions for the structural part of the problem, mimicking the behavior of the original Gromov-Wasserstein discrepancy. Indeed, this also highlights that the objective \eqref{eq:proposed-method} is generally not strictly convex; for instance, if multiple distinct isometries exist and they produce the same feature-matching cost, they will all be global minimizers.
+
+\section{Algorithm}
+Suppose that we have $(X_i,f(X_i))$ for $i=1,...,n_X$ as source data and $(Y_j,f(Y_j))$ for $j=1,...,n_Y$ as target data. Denote $\hat{\mathbb{P}}_X$ and $\hat{\mathbb{P}}_Y$ by the empirical distributions of $X$ and $Y$, respectively. Then, the empirical version of \eqref{eq:proposed-method} corresponds to
+\begin{align*}
+	%\label{eq:finite-proposed-method}
+	\inf_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathbb{E}_{(X,Y)\sim\pi}\big[\|f(X)-f(Y)\|_2^2\big] + \frac{\lambda}{2} \| D_XT_\pi - T_\pi D_Y \|_{\mathrm{HS}}^2 .
+\end{align*}
+In fact, the above problem can be written as a convex quadratic program (and reduces to a linear program when $\lambda = 0$):
+\begin{align}
+	\label{eq:finite-proposed-method}
+	\min_{\pi}\; &\underbrace{\mathrm{Tr}\left(C_f^\top \pi\right) + \frac{\lambda}{2n_Xn_Y} \left\| n_Y \hat{D}_X \pi - n_X \pi \hat{D}_Y \right\|_F^2}_{\eqqcolon \mathcal{L}(\pi)} \nonumber\\
+	\mathrm{s.t.}\quad &\pi\mathbf{1}_{n_Y} = \frac{1}{n_X} \mathbf{1}_{n_X} , \quad \pi^\top \mathbf{1}_{n_X} = \frac{1}{n_Y} \mathbf{1}_{n_Y} , \quad \pi \geq 0 ,
+\end{align}
+where $\pi \in \mathbb{R}_{+}^{n_X \times n_Y}$, $(C_f)_{ij} = \|f(X_i) - f(Y_j)\|_2^2$, $(\hat{D}_X)_{ii^\prime} = d_S(X_i,X_{i^\prime})$, and $(\hat{D}_Y)_{jj^\prime} = d_S(Y_j,Y_{j^\prime})$.
+
+%%% Optimization algorithm %%%
+As problem \eqref{eq:finite-proposed-method} is a convex quadratic program, numerous standard optimization algorithms are available to find its global minimizer. In this paper, however, we focus on the Frank-Wolfe (FW) algorithm, also known as the conditional gradient (CG) method. The FW algorithm is particularly well-suited for this problem due to its ``projection-free" nature. Unlike projected gradient methods that require a potentially costly projection back onto the feasible set $\Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)$ at each iteration, the FW algorithm only requires solving a linear minimization problem over this same set. This linear subproblem (or "Linear Minimization Oracle") is often computationally simpler and more efficient to solve than the full projection, making the FW algorithm an attractive choice for optimization problems over the transport polytope.
+
+%%% Find an optimal transport %%%
+In many practical applications, it is often more desirable to find a deterministic transport map (or hard assignment) from $X$ to $Y$, rather than the soft coupling $\hat{\pi}$ found by \eqref{eq:finite-proposed-method}. While the optimal solution $\hat{\pi}$ is not guaranteed to be deterministic, we can obtain such a map by solving the following linear assignment problem (LAP):
+\begin{align}
+	\label{eq:finite-projection-method}
+	\hat{P}{\hat{\pi}} \coloneqq \argmax_{P \in \mathcal{P}} \mathrm{Tr}(P^\top\hat{\pi}) ,
+\end{align}
+where $\hat{\pi}$ is an optimal solution to \eqref{eq:finite-proposed-method} and $\mathcal{P}$ denotes the set of deterministic assignment matrices. Specifically, 
+\begin{align}
+	\label{eq:assign-matrix-space}
+	\mathcal{P} \coloneqq \{P \in \{0,1\}^{n_X \times n_Y}: P\mathbf{1}_{n_Y} = \mathbf{1}_{n_X}, \; P^\top\mathbf{1}_{n_X} = \mathbf{1}_{n_Y}\} .
+\end{align}
+This LAP seeks the hard assignment $P$ that best aligns with the optimal soft coupling $\hat{\pi}$ and can be solved efficiently using standard methods like the Hungarian algorithm.
+
+\begin{algorithm}[t]
+	\caption{Convex Quadratic Fused Transport Plan via FW and LAP Projection}
+	\label{alg:proposed-algorithm}
+	\begin{algorithmic}[1]
+		\Require Source data $\{(X_i, f(X_i))\}_{i=1}^{n_X}$, target data $\{(Y_j, f(Y_j))\}_{j=1}^{n_Y}$, regularization parameter $\lambda \ge 0$, max iters $T$
+		
+		\State Construct matrices:
+		\Statex \hspace{\algorithmicindent} $(C_f)_{ij} \gets \|f(X_i)-f(Y_j)\|_2^2$, \quad
+		$(\hat D_X)_{ii'} \gets d_S(X_i,X_{i'})$, \quad
+		$(\hat D_Y)_{jj'} \gets d_S(Y_j,Y_{j'})$
+		
+		%\Statex \hspace{\algorithmicindent} $A \gets n_Y \hat D_X$, \quad $B \gets n_X \hat D_Y$
+		\State Initialize $\pi^{(0)} \gets \frac{1}{n_X n_Y}\mathbf{1}_{n_X}\mathbf{1}_{n_Y}^\top$
+		
+		\For{$t=0,...,T$}
+		%\State $\nabla F(\pi^{(t)}) \gets C_f + \frac{\lambda}{n_X n_Y}\!\left[A^\top(A\pi^{(t)}-\pi^{(t)}B) - (A\pi^{(t)}-\pi^{(t)}B)B^\top\right]$
+		\State Calculate the gradient $\nabla \mathcal{L}(\pi^{(t)})$ in \eqref{eq:finite-proposed-method}
+		\State Take $\tilde{\pi}^{(t)} \gets \arg\min_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathrm{Tr}(\nabla \mathcal{L}(\pi^{(t)})^\top \pi)$
+		\State $\pi^{(t+1)} \gets (1-\gamma_t)\pi^{(t)} + \gamma_t \tilde{\pi}^{(t)}$ for some $0 < \gamma_t < 1$
+		\EndFor
+		\State $\hat\pi \gets \pi^{(T)}$
+		\State \textbf{Optional (LAP projection):} $\displaystyle
+		\hat P \gets \arg\max_{P \in \mathcal{P}} \mathrm{Tr}(P^\top \hat\pi)$, where $\mathcal{P}$ is as defined in \eqref{eq:assign-matrix-space}
+		\State \textbf{Return:} $\hat\pi$ (and optionally $\hat P$)
+	\end{algorithmic}
+\end{algorithm}
 
 
 
@@ -215,6 +327,69 @@ The existence follows from standard weak compactness of the set of couplings $\P
 
 \appendix
 \section{Appendix}
+
+\subsection{Proof for \cref{thm:convex-relaxation}}\label{pf:thm:convex-relaxation}
+\begin{proof}
+	Refer to \cref{cor:regularization-term} to confirm that the operator $D_XT_{\pi} - T_{\pi}D_Y$ is well-defined and Hilbert--Schmidt for any $\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)$. 
+	To establish convexity of \eqref{eq:proposed-method}, it suffices to show that 
+	\begin{align*}
+	\pi \;\mapsto\; \|D_XT_\pi - T_\pi D_Y\|_{\mathrm{HS}}^2
+	\end{align*}
+	is convex on $\Pi(\mathbb{P}_X,\mathbb{P}_Y)$.
+	
+	Let $\pi_1,\pi_2 \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)$ and $t \in [0,1]$, and define $\pi_t = t\pi_1 + (1-t)\pi_2$. 
+	Since both $\pi_1$ and $\pi_2$ share the same marginals $\mathbb{P}_X$ and $\mathbb{P}_Y$, 
+	the disintegration theorem ensures that their corresponding conditional kernels satisfy
+	\begin{align*}
+	k_t(\cdot|x) = t\,k_1(\cdot|x) + (1-t)\,k_2(\cdot|x)
+	\quad \text{for} \;\; \mathbb{P}_X\text{-a.e.} \; x \in S.
+	\end{align*}
+	That is, the conditional distribution of $Y$ given $X=x$ under $\pi_t$ is the convex combination of the conditional distributions under $\pi_1$ and $\pi_2$. 
+	Consequently, for any $g \in L^2(S,\mathbb{P}_Y)$,
+	\begin{align*}
+		(T_{\pi_t} g)(x)
+		&= \int g(y)\,k_t(dy|x)
+		= t \int g(y)\,k_1(dy|x) + (1-t)\int g(y)\,k_2(dy|x) \\
+		&= t\,(T_{\pi_1}g)(x) + (1-t)\,(T_{\pi_2}g)(x),
+	\end{align*}
+	which shows that $T_{\pi_t}$ depends affinely on $\pi$, i.e.,
+	\begin{align*}
+	T_{\pi_t} = t\,T_{\pi_1} + (1-t)\,T_{\pi_2}.
+	\end{align*}
+	
+	Because $D_X$ and $D_Y$ are linear operators, it follows that
+	\begin{align*}
+	D_XT_{\pi_t} - T_{\pi_t}D_Y
+	= t\,(D_XT_{\pi_1} - T_{\pi_1}D_Y)
+	+ (1-t)\,(D_XT_{\pi_2} - T_{\pi_2}D_Y).
+	\end{align*}
+	Denoting $A_i := D_XT_{\pi_i} - T_{\pi_i}D_Y$ $(i=1,2)$ and $A_t := D_XT_{\pi_t} - T_{\pi_t}D_Y$, 
+	we have $A_t = tA_1 + (1-t)A_2$. 
+	Since $\|\cdot\|_{\mathrm{HS}}^2$ is convex, we obtain
+	\begin{align*}
+	\|A_t\|_{\mathrm{HS}}^2
+	= \|tA_1 + (1-t)A_2\|_{\mathrm{HS}}^2
+	\le t\,\|A_1\|_{\mathrm{HS}}^2 + (1-t)\,\|A_2\|_{\mathrm{HS}}^2.
+	\end{align*}
+	Therefore, $\pi \mapsto \|D_XT_\pi - T_\pi D_Y\|_{\mathrm{HS}}^2$ is convex on $\Pi(\mathbb{P}_X,\mathbb{P}_Y)$. 
+\end{proof}
+
+\subsection{Proof for \cref{cor:regularization-term}}\label{pf:cor:regularization-term}
+\begin{proof}
+	%Let $\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)$ be arbitrary, and let $k(,\cdot,\cdot): \mathcal{B}(S) \times S \to [0,1]$ be a Markov kernel such that $\pi(dx,dy) = k(dy,x)\mathbb{P}_X(dx)$, where $\mathcal{B}(S)$ is the Borel $\sigma$-algebra of $S$. 
+	
+	For $g \in L^2(S,\mathbb{P}_Y)$, observe that
+	\begin{align*}
+		%		&(D_XT_{\pi}g)(x) = \mathbb{E}\Big[d_S(x,X)\mathbb{E}\left[g(Y) \mid X\right]\Big] = \mathbb{E}\Big[g(Y) \mathbb{E}\left[d_S(x,X) \mid Y\right]\Big] = \int_S K_1^\pi(x,y)g(y)\mathbb{P}_Y(dy) , \\
+		%		&(T_{\pi}D_Yg)(x) = \mathbb{E}\Big[(D_Yg)(Y) \mid X = x\Big] = \int_S\left(\int_S d_S(y,y^\prime)g(y^\prime)\mathbb{P}_Y(dy^\prime)\right) k(dy,x) = \int_S K_2^\pi(x,y^\prime)g(y^\prime) \mathbb{P}_Y(dy^\prime) ,
+		&(D_XT_{\pi}g)(x) = \mathbb{E}\Big[d_S(x,X)\mathbb{E}\left[g(Y) \mid X\right]\Big] = \int_S K_1^\pi(x,y)g(y)\mathbb{P}_Y(dy) , \\
+		&(T_{\pi}D_Yg)(x) = \mathbb{E}\Big[(D_Yg)(Y) \mid X = x\Big] = \int_S K_2^\pi(x,y)g(y) \mathbb{P}_Y(dy) .
+	\end{align*}
+	Since $\sup_{x,y \in S}d_S(x,y) \leq 1$, $D_XT_{\pi} - T_{\pi}D_Y$ is a well-defined Hilbert-Schmidt operator with a kernel $\Gamma^\pi(x,y)$:
+	\begin{align*}
+		\| D_XT_{\pi} - T_{\pi}D_Y \|_{\mathrm{HS}}^2 = \int_S\int_S \Gamma^\pi(x,y)^2\mathbb{P}_X(dx)\mathbb{P}_Y(dy) \leq 1.
+	\end{align*}
+\end{proof}
 
 
 \end{document}
