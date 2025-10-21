@@ -244,17 +244,31 @@ The distance potential operator is a special case of a Hilbert-Schmidt operator.
 Corollary~\ref{cor:regularization-term} provides an explicit expression for the regularization term from Theorem~\ref{thm:convex-relaxation}, reformulating it as the squared integral of a kernel function $\Gamma^\pi(x,y)$. This kernel $\Gamma^\pi$ measures the discrepancy between two conditional expected distances: $K_1^\pi(x,y)$ and $K_2^\pi(x,y)$. Specifically, $K_1^\pi(x,y)$ represents the average distance from $x$ to the $X$'s coupled with $y$ (given $Y=y$), while $K_2^\pi(x,y)$ is the average distance from $y$ to the $Y$'s coupled with $x$ (given $X=x$). The regularization term can thus be interpreted as a metric that quantifies the symmetric alignment of these ``cross-spatial" average distances induced by the coupling $\pi$.
 
 %%% Illustration %%%
+%\begin{proposition}
+%	\label{prop:solution}
+%	Let $T: S \to S$ be an isometry and $\pi = (\mathrm{Id},T)_{\#}\mathbb{P}_X$. Then, $\|D_XT_{\pi} - T_{\pi}D_Y\|_{\mathrm{HS}}^2 = 0$.
+%\end{proposition}
+%\begin{proof}
+%	First, note that $Y \overset{a.s.}{=} T(X)$. Our goal is to show that $\Gamma^\pi(x,y) = 0$ for $\pi$-a.e. $(x,y) \in S^2$.
+%	\begin{align*}
+%		K_1^\pi(x,y) \overset{a.s.}{=} d_S(x,T^{-1}(y)) = d_S(T(x),y) \overset{a.s.}{=} \mathbb{E}\left[d_S(Y,y) \mid X = x\right] = K_2^\pi(x,y) .
+%	\end{align*}
+%\end{proof}
 \begin{proposition}
 	\label{prop:solution}
-	Let $T: S \to S$ be an isometry and $\pi = (\mathrm{Id},T)_{\#}\mathbb{P}_X$. Then, $\|D_XT_{\pi} - T_{\pi}D_Y\|_{\mathrm{HS}}^2 = 0$.
+	Let $T: S \to S$ be an injective measurable map, and consider $\pi = (\mathrm{Id},T)_{\#}\mathbb{P}_X$. Then,
+	\begin{align*}
+		\|D_XT_{\pi} - T_{\pi}D_Y\|_{\mathrm{HS}}^2 = 0 \iff d_S(T(x),T(x^\prime)) = d_S(x,x^\prime) ,\;\; \text{for $\mathbb{P}_X \otimes \mathbb{P}_X$-a.e. $(x,x^\prime)$} .
+	\end{align*}
+	Moreover, if in addition $T$ is continuous and $\mathrm{supp}(\mathbb{P}_X) = S$, then the identity $d_S(T(x),T(x'))=d_S(x,x')$ holds for all $x,x'\in S$, hence $T$ is an isometry on $S$.
 \end{proposition}
 \begin{proof}
-	First, note that $Y \overset{a.s.}{=} T(X)$. Our goal is to show that $\Gamma^\pi(x,y) = 0$ for $\pi$-a.e. $(x,y) \in S^2$.
-	\begin{align*}
-		K_1^\pi(x,y) \overset{a.s.}{=} d_S(x,T^{-1}(y)) = d_S(T(x),y) \overset{a.s.}{=} \mathbb{E}\left[d_S(Y,y) \mid X = x\right] = K_2^\pi(x,y) .
-	\end{align*}
+	See Appendix~\ref{pf:prop:solution}.
 \end{proof}
-\cref{prop:solution} provides a crucial validation for the proposed regularization term, demonstrating its consistency with the goals of geometric structure preservation. It shows that if the coupling $\pi$ is induced by a deterministic isometry $T$ (i.e., $Y=T(X)$ almost surely), which represents a perfect alignment of the metric structures, our regularization term vanishes completely. This confirms that our convex surrogate correctly identifies such ideal, structure-preserving maps as optimal solutions for the structural part of the problem, mimicking the behavior of the original Gromov-Wasserstein discrepancy. Indeed, this also highlights that the objective \eqref{eq:proposed-method} is generally not strictly convex; for instance, if multiple distinct isometries exist and they produce the same feature-matching cost, they will all be global minimizers.
+\cref{prop:solution} provides a crucial validation for the proposed regularization term, demonstrating its consistency with the goals of geometric structure preservation. It shows that if the coupling $\pi$ is induced by a deterministic almost-isometry $T$, which represents a perfect alignment of the metric structures, our regularization term vanishes completely. This confirms that our convex surrogate correctly identifies such ideal, structure-preserving maps as optimal solutions for the structural part of the problem, mimicking the behavior of the original Gromov-Wasserstein discrepancy. 
+
+%%% Non-uniqueness %%%
+Indeed, this also reveals that the objective \eqref{eq:proposed-method} is generally not strictly convex; for instance, if multiple distinct isometries exist and they produce the same feature-matching cost, they will all be global minimizers.
 
 \section{Algorithm}
 Suppose that we have $(X_i,f(X_i))$ for $i=1,...,n_X$ as source data and $(Y_j,f(Y_j))$ for $j=1,...,n_Y$ as target data. Denote $\hat{\mathbb{P}}_X$ and $\hat{\mathbb{P}}_Y$ by the empirical distributions of $X$ and $Y$, respectively. Then, the empirical version of \eqref{eq:proposed-method} corresponds to
@@ -271,13 +285,13 @@ In fact, the above problem can be written as a convex quadratic program (and red
 where $\pi \in \mathbb{R}_{+}^{n_X \times n_Y}$, $(C_f)_{ij} = \|f(X_i) - f(Y_j)\|_2^2$, $(\hat{D}_X)_{ii^\prime} = d_S(X_i,X_{i^\prime})$, and $(\hat{D}_Y)_{jj^\prime} = d_S(Y_j,Y_{j^\prime})$.
 
 %%% Optimization algorithm %%%
-As problem \eqref{eq:finite-proposed-method} is a convex quadratic program, numerous standard optimization algorithms are available to find its global minimizer. In this paper, however, we focus on the Frank-Wolfe (FW) algorithm, also known as the conditional gradient (CG) method. The FW algorithm is particularly well-suited for this problem due to its ``projection-free" nature. Unlike projected gradient methods that require a potentially costly projection back onto the feasible set $\Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)$ at each iteration, the FW algorithm only requires solving a linear minimization problem over this same set. This linear subproblem (or "Linear Minimization Oracle") is often computationally simpler and more efficient to solve than the full projection, making the FW algorithm an attractive choice for optimization problems over the transport polytope.
+As \eqref{eq:finite-proposed-method} is a convex quadratic program, numerous standard optimization algorithms are available to find its global minimizer. In this paper, however, we focus on the Frank-Wolfe (FW) algorithm, also known as the conditional gradient (CG) method. The FW algorithm is particularly well-suited for this problem due to its ``projection-free" nature. Unlike projected gradient methods that require a potentially costly projection back onto the feasible set $\Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)$ at each iteration, the FW algorithm only requires solving a linear minimization problem over this same set. This linear subproblem (or "Linear Minimization Oracle") is often computationally simpler and more efficient to solve than the full projection, making the FW algorithm an attractive choice for optimization problems over the transport polytope.
 
 %%% Find an optimal transport %%%
 In many practical applications, it is often more desirable to find a deterministic transport map (or hard assignment) from $X$ to $Y$, rather than the soft coupling $\hat{\pi}$ found by \eqref{eq:finite-proposed-method}. While the optimal solution $\hat{\pi}$ is not guaranteed to be deterministic, we can obtain such a map by solving the following linear assignment problem (LAP):
 \begin{align}
 	\label{eq:finite-projection-method}
-	\hat{P}{\hat{\pi}} \coloneqq \argmax_{P \in \mathcal{P}} \mathrm{Tr}(P^\top\hat{\pi}) ,
+	\hat{P} \coloneqq \argmax_{P \in \mathcal{P}} \mathrm{Tr}(P^\top\hat{\pi}) ,
 \end{align}
 where $\hat{\pi}$ is an optimal solution to \eqref{eq:finite-proposed-method} and $\mathcal{P}$ denotes the set of deterministic assignment matrices. Specifically, 
 \begin{align}
@@ -389,6 +403,41 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	\begin{align*}
 		\| D_XT_{\pi} - T_{\pi}D_Y \|_{\mathrm{HS}}^2 = \int_S\int_S \Gamma^\pi(x,y)^2\mathbb{P}_X(dx)\mathbb{P}_Y(dy) \leq 1.
 	\end{align*}
+\end{proof}
+
+\subsection{Proof for \cref{prop:solution}}\label{pf:prop:solution}
+\begin{proof}
+	Since $Y = T(X)$ almost surely, for any $(x,y) \in \mathrm{supp}(\pi)$, we have
+	\begin{align*}
+		K_1^\pi(x,y) &= \mathbb{E}[d_S(x,X)\mid Y=y] = d_S\bigl(x,T^{-1}(y)\bigr), \\
+		K_2^\pi(x,y) &= \mathbb{E}[d_S(y,Y)\mid X=x] = d_S\bigl(y,T(x)\bigr).
+	\end{align*}
+	Hence, for such $(x,y)$,
+	\begin{align*}
+		\Gamma^\pi(x,y)
+		= K_1^\pi(x,y) - K_2^\pi(x,y)
+		= d_S\bigl(x,T^{-1}(y)\bigr) - d_S\bigl(y,T(x)\bigr).
+	\end{align*}
+	Now, setting $y = T(x')$ gives
+	\begin{align*}
+		\Gamma^\pi\bigl(x,T(x')\bigr)
+		= d_S(x,x') - d_S\bigl(T(x),T(x')\bigr).
+	\end{align*}
+	
+	($\Rightarrow$) Suppose that $\|D_XT_\pi - T_\pi D_Y\|_{\mathrm{HS}}^2 = 0$.  
+	Then $\Gamma^\pi = 0$ holds for $\pi$-almost every $(x,y)$, and in particular, for pairs $(x,T(x'))$ with respect to $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x')$.  
+	Hence $d_S(T(x),T(x')) = d_S(x,x')$ holds for $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x')$.
+	
+	($\Leftarrow$) Conversely, if $d_S(T(x),T(x')) = d_S(x,x')$ holds for $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x')$, substituting this into the above expression yields $\Gamma^\pi(x,T(x')) = 0$ for $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x')$.  
+	Therefore, $\Gamma^\pi = 0$ holds for $\pi$-almost every $(x,y)$, which implies that the Hilbert–Schmidt norm is zero.
+	
+	Finally, if $T$ is continuous and $\mathrm{supp}(\mathbb{P}_X) = S$, then the function
+	\begin{align*}
+		F(x,x') := d_S(x,x') - d_S(T(x),T(x'))
+	\end{align*}
+	is continuous and vanishes on the dense set $\mathrm{supp}(\mathbb{P}_X) \times \mathrm{supp}(\mathbb{P}_X)$.  
+	By continuity, $F \equiv 0$ on $S \times S$.  
+	Thus, $d_S(T(x),T(x')) = d_S(x,x')$ holds for all $x,x' \in S$, implying that $T$ is an isometry on $S$.
 \end{proof}
 
 
