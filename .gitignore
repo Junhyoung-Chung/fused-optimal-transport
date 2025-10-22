@@ -30,7 +30,10 @@ realdata/*.xlsx
 realdata/*.data
 realdata/*.all-data
 realdata/*.zip
-realdata/.ipynb_checkpoints
+*.ipynb_checkpoints
+
+# code
+*.pyc
 
 # eps files
 plots/*.pdf
