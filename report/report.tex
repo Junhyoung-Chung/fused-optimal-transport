@@ -209,7 +209,7 @@ The existence follows from standard weak compactness of the set of couplings $\P
 \paragraph{Proposed method.} Our proposed method introduces a surrogate loss for the second term in \eqref{eq:pi-fused-ot}, thereby ensuring that the problem is convex.
 \begin{definition}[Distance kernel]
 	\label{def:kernel}
-	For a fixed bandwidth $h > 0$, a function $K_h: S \times S \to \mathbb{R}_+$ is said to be a \emph{distance kernel} if there exists a bounded, strictly monotone $\kappa: \mathbb{R}_+ \to \mathbb{R}_+$ such that
+	For a fixed bandwidth $h > 0$, a function $K_h: S \times S \to \mathbb{R}_+$ is said to be a \emph{distance kernel} if there exists a bounded, (strictly) monotone $\kappa: \mathbb{R}_+ \to \mathbb{R}_+$ such that
 	\begin{align*}
 		K_h(x,x^\prime) = \frac{1}{h}\kappa\left(\frac{d_S(x,x^\prime)}{h}\right) .
 	\end{align*}
@@ -246,10 +246,10 @@ The distance potential operator is a special case of a Hilbert-Schmidt operator.
 
 \begin{theorem}
 	\label{thm:convex-relaxation}
-	For $\lambda \geq 0$ and a feature function $f$, consider the optimization problem 
+	For $0 \leq \alpha \leq 1$ and a feature function $f$, consider the optimization problem 
 	\begin{align}
 		\label{eq:proposed-method}
-		\inf_{\pi\in\Pi(\mathbb{P}_X,\mathbb{P}_Y)} \mathbb{E}_{(X,Y)\sim\pi}\big[\|f(X)-f(Y)\|_2^2\big] + \frac{\lambda}{2} \| D_X^{\kappa}T_\pi - T_\pi D_Y^{\kappa} \|_{\mathrm{HS}}^2 ,
+		\inf_{\pi\in\Pi(\mathbb{P}_X,\mathbb{P}_Y)} (1-\alpha)\mathbb{E}_{(X,Y)\sim\pi}\big[\|f(X)-f(Y)\|_2^2\big] + \frac{\alpha}{2} \| D_X^{\kappa}T_\pi - T_\pi D_Y^{\kappa} \|_{\mathrm{HS}}^2 ,
 	\end{align}
 	where $\|\cdot\|_{\mathrm{HS}}^2$ is a Hilbert-Schmidt norm. Then, \eqref{eq:proposed-method} is a convex problem.
 \end{theorem}
@@ -289,13 +289,13 @@ Indeed, this also reveals that the objective \eqref{eq:proposed-method} is gener
 Suppose that we have $(X_i,f(X_i))$ for $i=1,...,n_X$ as source data and $(Y_j,f(Y_j))$ for $j=1,...,n_Y$ as target data. Denote $\hat{\mathbb{P}}_X$ and $\hat{\mathbb{P}}_Y$ by the empirical distributions of $X$ and $Y$, respectively. Then, the empirical version of \eqref{eq:proposed-method} corresponds to
 \begin{align*}
 	%\label{eq:finite-proposed-method}
-	\inf_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathbb{E}_{(X,Y)\sim\pi}\big[\|f(X)-f(Y)\|_2^2\big] + \frac{\lambda}{2} \| D_X^{\kappa}T_\pi - T_\pi D_Y^{\kappa} \|_{\mathrm{HS}}^2 .
+	\inf_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} (1-\alpha)\mathbb{E}_{(X,Y)\sim\pi}\big[\|f(X)-f(Y)\|_2^2\big] + \frac{\alpha}{2} \| D_X^{\kappa}T_\pi - T_\pi D_Y^{\kappa} \|_{\mathrm{HS}}^2 .
 \end{align*}
-In fact, the above problem can be written as a convex quadratic program (and reduces to a linear program when $\lambda = 0$):
+In fact, the above problem can be written as a convex quadratic program (and reduces to a linear program when $\alpha = 0$):
 \begin{align}
 	\label{eq:finite-proposed-method}
-	\min_{\pi}\; &\underbrace{\mathrm{Tr}\left(C_f^\top \pi\right) + \frac{\lambda}{2n_Xn_Y} \left\| n_Y \hat{D}^{\kappa}_X \pi - n_X \pi \hat{D}^{\kappa}_Y \right\|_F^2}_{\eqqcolon \mathcal{L}(\pi)} \nonumber\\
-	\mathrm{s.t.}\quad &\pi\mathbf{1}_{n_Y} = \frac{1}{n_X} \mathbf{1}_{n_X} , \quad \pi^\top \mathbf{1}_{n_X} = \frac{1}{n_Y} \mathbf{1}_{n_Y} , \quad \pi \geq 0 ,
+	\min_{\pi}\; &\underbrace{\alpha\mathrm{Tr}\left(C_f^\top \pi\right) + \frac{1-\alpha}{2n_Xn_Y} \left\| n_Y \hat{D}^{\kappa}_X \pi - n_X \pi \hat{D}^{\kappa}_Y \right\|_F^2}_{\eqqcolon \mathcal{L}(\pi)} \nonumber\\
+	\mathrm{s.t.}&\quad \pi\mathbf{1}_{n_Y} = \frac{1}{n_X} \mathbf{1}_{n_X} , \quad \pi^\top \mathbf{1}_{n_X} = \frac{1}{n_Y} \mathbf{1}_{n_Y} , \quad \pi \geq 0 ,
 \end{align}
 where $\pi \in \mathbb{R}_{+}^{n_X \times n_Y}$, $(C_f)_{ij} = \|f(X_i) - f(Y_j)\|_2^2$, $(\hat{D}^{\kappa}_X)_{ii^\prime} = K_h(X_i,X_{i^\prime})$, and $(\hat{D}^{\kappa}_Y)_{jj^\prime} = K_h(Y_j,Y_{j^\prime})$.
 
@@ -319,7 +319,7 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	\caption{Convex Quadratic Fused Transport Plan via FW and LAP Projection}
 	\label{alg:proposed-algorithm}
 	\begin{algorithmic}[1]
-		\Require Source data $\{(X_i, f(X_i))\}_{i=1}^{n_X}$, target data $\{(Y_j, f(Y_j))\}_{j=1}^{n_Y}$, regularization parameter $\lambda \ge 0$, distance kernel $K_h$, max iters $T$
+		\Require Source data $\{(X_i, f(X_i))\}_{i=1}^{n_X}$, target data $\{(Y_j, f(Y_j))\}_{j=1}^{n_Y}$, weight parameter $0 \leq \alpha \leq 1$, distance kernel $K_h$, max iters $T$
 		
 		\State Construct matrices:
 		\Statex \hspace{\algorithmicindent} $(C_f)_{ij} \gets \|f(X_i)-f(Y_j)\|_2^2$, \quad
