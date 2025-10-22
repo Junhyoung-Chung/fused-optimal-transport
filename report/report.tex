@@ -207,21 +207,49 @@ The existence follows from standard weak compactness of the set of couplings $\P
 
 %%% Proposed method %%%
 \paragraph{Proposed method.} Our proposed method introduces a surrogate loss for the second term in \eqref{eq:pi-fused-ot}, thereby ensuring that the problem is convex.
-\begin{definition}[Distance potential operator]
-	\label{def:distance-potential}
-	Let $(S,d_S,\mathbb{P}_X)$ be a compact metric space. The \emph{distance potential operator} $D_X : L^2(S,\mathbb{P}_X) \to L^2(S,\mathbb{P}_X)$ is defined by
+\begin{definition}[Distance kernel]
+	\label{def:kernel}
+	For a fixed bandwidth $h > 0$, a function $K_h: S \times S \to \mathbb{R}_+$ is said to be a \emph{distance kernel} if there exists a bounded, strictly monotone $\kappa: \mathbb{R}_+ \to \mathbb{R}_+$ such that
 	\begin{align*}
-		(D_Xf)(x) \coloneqq \mathbb{E}\left[d_S(x,X)f(X)\right] = \int_S d_S(x,y)\, f(y)\, \mathbb{P}_X(dy), \quad \forall f \in L^2(S,\mathbb{P}_X),\ \forall x \in S .
+		K_h(x,x^\prime) = \frac{1}{h}\kappa\left(\frac{d_S(x,x^\prime)}{h}\right) .
 	\end{align*}
 \end{definition}
-The distance potential operator is a special case of a Hilbert-Schmidt operator. Intuitively, $(D_X f)(x)$ represents a distance-weighted average of $f$ with respect to the point $x$.
+We only require $\kappa$ to be \emph{strictly monotone}, which means it may be either strictly decreasing or strictly increasing. 
+This assumption guarantees injectivity of the mapping $r \mapsto \kappa(r/h)$, so that equal kernel values correspond exactly to equal underlying distances; that is, $K_h(x,x') = K_h(T(x),T(x)')$ if and only if $d_S(x,x') = d_S(T(x),T(x'))$. 
+The direction of monotonicity determines the geometric emphasis of the regularization term. 
+When $\kappa$ is strictly decreasing (for example, $\kappa(t) = e^{-t}$ or $(1+t)^{-p}$), the kernel assigns larger weights to nearby pairs, thus promoting preservation of local geometric structures. 
+Conversely, when $\kappa$ is strictly increasing but bounded (for example, $\kappa(t)=\exp(t)/(1+\exp(t))$), it emphasizes distant pairs, discouraging global contraction and encouraging large-scale geometric alignment. 
+In both cases, the bandwidth $h$ controls the spatial scale of this emphasis—small $h$ focuses on fine local structures, while large $h$ smooths over broader spatial relationships. 
+Finally, the boundedness of $\kappa$ ensures that $K_h$ is bounded and that the operator $D_X^{\kappa}$ is Hilbert--Schmidt; importantly, the convexity result in Theorem~\ref{thm:convex-relaxation} holds regardless of the monotonicity direction, which will be discussed later.
+
+\begin{definition}[Distance potential operator]
+	\label{def:distance-potential}
+	Let $(S,d_S,\mathbb{P}_X)$ be a compact metric space. The \emph{distance potential operator} $D_X^{\kappa} : L^2(S,\mathbb{P}_X) \to L^2(S,\mathbb{P}_X)$ is defined by
+	\begin{align*}
+		(D_X^{\kappa}f)(x) \coloneqq \mathbb{E}\left[K_h(x,X)f(X)\right] = \int_S K_h(x,y)\, f(y)\, \mathbb{P}_X(dy) , \quad \forall f \in L^2(S,\mathbb{P}_X),\ \forall x \in S .
+	\end{align*}
+\end{definition}
+The distance potential operator is a special case of a Hilbert-Schmidt operator. Intuitively, $(D_X^{\kappa} f)(x)$ represents a distance-weighted average of $f$ with respect to the point $x$.
+
+\begin{lemma}
+	\label{lem:regularization-term}
+	For any $\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)$,
+	\begin{align*}
+		\| D_X^{\kappa}T_{\pi} - T_{\pi}D_Y^{\kappa} \|_{\mathrm{HS}}^2 = \int_S\int_S \Gamma_\pi(x,y)^2\mathbb{P}_X(dx)\mathbb{P}_Y(dy) ,
+	\end{align*}
+	where $\Gamma_\pi^1(x,y) \coloneqq \mathbb{E}_\pi[K_h(x,X) \mid Y = y]$, $\Gamma_\pi^2(x,y) \coloneqq \mathbb{E}_\pi[K_h(y,Y) \mid X = x]$, and $\Gamma_\pi(x,y) \coloneqq \Gamma_\pi^1(x,y) - \Gamma_\pi^2(x,y)$.
+\end{lemma}
+\begin{proof}
+	See Appendix~\ref{pf:lem:regularization-term}.
+\end{proof}
+\cref{lem:regularization-term} proposes a convex surrogate for the Gromov-Wasserstein term in \eqref{eq:pi-fused-ot}, which can be explicitly expressed as the squared integral of a kernel function $\Gamma_\pi(x,y)$. This kernel $\Gamma_\pi$ measures the discrepancy between two conditional expected distances: $\Gamma_\pi^1(x,y)$ and $\Gamma_\pi^2(x,y)$. Specifically, $\Gamma_\pi^1(x,y)$ represents the expected kernel value $K_h(x,X)$ given $Y=y$, while $\Gamma_\pi^2(x,y)$ is the expected kernel value $K_h(y,Y)$ given $X=x$. The regularization term can thus be interpreted as a metric that quantifies the symmetric alignment of these ``cross-spatial" kernel-weighted expectations induced by the coupling $\pi$.
 
 \begin{theorem}
 	\label{thm:convex-relaxation}
 	For $\lambda \geq 0$ and a feature function $f$, consider the optimization problem 
 	\begin{align}
 		\label{eq:proposed-method}
-		\inf_{\pi\in\Pi(\mathbb{P}_X,\mathbb{P}_Y)} \mathbb{E}_{(X,Y)\sim\pi}\big[\|f(X)-f(Y)\|_2^2\big] + \frac{\lambda}{2} \| D_XT_\pi - T_\pi D_Y \|_{\mathrm{HS}}^2 ,
+		\inf_{\pi\in\Pi(\mathbb{P}_X,\mathbb{P}_Y)} \mathbb{E}_{(X,Y)\sim\pi}\big[\|f(X)-f(Y)\|_2^2\big] + \frac{\lambda}{2} \| D_X^{\kappa}T_\pi - T_\pi D_Y^{\kappa} \|_{\mathrm{HS}}^2 ,
 	\end{align}
 	where $\|\cdot\|_{\mathrm{HS}}^2$ is a Hilbert-Schmidt norm. Then, \eqref{eq:proposed-method} is a convex problem.
 \end{theorem}
@@ -230,42 +258,29 @@ The distance potential operator is a special case of a Hilbert-Schmidt operator.
 \end{proof}
 \cref{thm:convex-relaxation} establishes that the proposed optimization problem \eqref{eq:proposed-method} is convex with respect to the coupling $\pi$. This stems from the fact that the first term (feature-wise alignment) is linear in $\pi$, and the second regularization term is also a convex function of $\pi$. The latter holds because the map $\pi \mapsto T_\pi$ is affine, and the squared Hilbert-Schmidt norm $\|\cdot\|_{\mathrm{HS}}^2$ is a convex function; their composition thus preserves convexity (as detailed in Appendix~\ref{pf:thm:convex-relaxation}). Consequently, this problem formulation circumvents the computational challenges arising from non-convexity, which are inherent to the original Fused Gromov-Wasserstein problem~\eqref{eq:pi-fused-ot}, and guarantees that a global optimum can be efficiently found.
 
-\begin{corollary}
-	\label{cor:regularization-term}
-	For any $\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)$,
-	\begin{align*}
-		\| D_XT_{\pi} - T_{\pi}D_Y \|_{\mathrm{HS}}^2 = \int_S\int_S \Gamma^\pi(x,y)^2\mathbb{P}_X(dx)\mathbb{P}_Y(dy) ,
-	\end{align*}
-	where $K_1^\pi(x,y) \coloneqq \mathbb{E}_\pi[d_S(x,X) \mid Y = y]$, $K_2^\pi(x,y) \coloneqq \mathbb{E}_\pi[d_S(y,Y) \mid X = x]$, and $\Gamma^\pi(x,y) \coloneqq K_1^\pi(x,y) - K_2^\pi(x,y)$.
-\end{corollary}
-\begin{proof}
-	See Appendix~\ref{pf:cor:regularization-term}.
-\end{proof}
-Corollary~\ref{cor:regularization-term} provides an explicit expression for the regularization term from Theorem~\ref{thm:convex-relaxation}, reformulating it as the squared integral of a kernel function $\Gamma^\pi(x,y)$. This kernel $\Gamma^\pi$ measures the discrepancy between two conditional expected distances: $K_1^\pi(x,y)$ and $K_2^\pi(x,y)$. Specifically, $K_1^\pi(x,y)$ represents the average distance from $x$ to the $X$'s coupled with $y$ (given $Y=y$), while $K_2^\pi(x,y)$ is the average distance from $y$ to the $Y$'s coupled with $x$ (given $X=x$). The regularization term can thus be interpreted as a metric that quantifies the symmetric alignment of these ``cross-spatial" average distances induced by the coupling $\pi$.
-
 %%% Illustration %%%
 %\begin{proposition}
 %	\label{prop:solution}
-%	Let $T: S \to S$ be an isometry and $\pi = (\mathrm{Id},T)_{\#}\mathbb{P}_X$. Then, $\|D_XT_{\pi} - T_{\pi}D_Y\|_{\mathrm{HS}}^2 = 0$.
+%	Let $T: S \to S$ be an isometry and $\pi = (\mathrm{Id},T)_{\#}\mathbb{P}_X$. Then, $\|D_X^{\kappa}T_{\pi} - T_{\pi}D_Y^{\kappa}\|_{\mathrm{HS}}^2 = 0$.
 %\end{proposition}
 %\begin{proof}
-%	First, note that $Y \overset{a.s.}{=} T(X)$. Our goal is to show that $\Gamma^\pi(x,y) = 0$ for $\pi$-a.e. $(x,y) \in S^2$.
+%	First, note that $Y \overset{a.s.}{=} T(X)$. Our goal is to show that $\Gamma_\pi(x,y) = 0$ for $\pi$-a.e. $(x,y) \in S^2$.
 %	\begin{align*}
-%		K_1^\pi(x,y) \overset{a.s.}{=} d_S(x,T^{-1}(y)) = d_S(T(x),y) \overset{a.s.}{=} \mathbb{E}\left[d_S(Y,y) \mid X = x\right] = K_2^\pi(x,y) .
+%		\Gamma_\pi^1(x,y) \overset{a.s.}{=} d_S(x,T^{-1}(y)) = d_S(T(x),y) \overset{a.s.}{=} \mathbb{E}\left[d_S(Y,y) \mid X = x\right] = \Gamma_\pi^2(x,y) .
 %	\end{align*}
 %\end{proof}
 \begin{proposition}
 	\label{prop:solution}
 	Let $T: S \to S$ be an injective measurable map, and consider $\pi = (\mathrm{Id},T)_{\#}\mathbb{P}_X$. Then,
 	\begin{align*}
-		\|D_XT_{\pi} - T_{\pi}D_Y\|_{\mathrm{HS}}^2 = 0 \iff d_S(T(x),T(x^\prime)) = d_S(x,x^\prime) ,\;\; \text{for $\mathbb{P}_X \otimes \mathbb{P}_X$-a.e. $(x,x^\prime)$} .
+		\|D_X^{\kappa}T_{\pi} - T_{\pi}D_Y^{\kappa}\|_{\mathrm{HS}}^2 = 0 \;\iff\;d_S(T(x),T(x^\prime)) = d_S(x,x^\prime) ,\;\; \text{for $\mathbb{P}_X \otimes \mathbb{P}_X$-a.e. $(x,x^\prime)$} .
 	\end{align*}
 	Moreover, if in addition $T$ is continuous and $\mathrm{supp}(\mathbb{P}_X) = S$, then the identity $d_S(T(x),T(x'))=d_S(x,x')$ holds for all $x,x'\in S$, hence $T$ is an isometry on $S$.
 \end{proposition}
 \begin{proof}
 	See Appendix~\ref{pf:prop:solution}.
 \end{proof}
-\cref{prop:solution} provides a crucial validation for the proposed regularization term, demonstrating its consistency with the goals of geometric structure preservation. It shows that if the coupling $\pi$ is induced by a deterministic almost-isometry $T$, which represents a perfect alignment of the metric structures, our regularization term vanishes completely. This confirms that our convex surrogate correctly identifies such ideal, structure-preserving maps as optimal solutions for the structural part of the problem, mimicking the behavior of the original Gromov-Wasserstein discrepancy. 
+\cref{prop:solution} provides a crucial validation for the proposed regularization term, demonstrating its consistency with the goals of geometric structure preservation. It shows that the regularization term vanishes if and only if the coupling $\pi$ is induced by a deterministic almost-isometry $T$. This equivalence ($\iff$) is a powerful consequence of the strictly monotone property of the kernel function $\kappa$ (\cref{def:kernel}), which ensures that the kernel values are identical ($K_h(x,x') = K_h(T(x),T(x'))$) if and only if the underlying distances are identical ($d_S(x,x') = d_S(T(x),T(x'))$). This confirms that our convex surrogate correctly and exclusively identifies these ideal, structure-preserving maps as optimal solutions for the structural part of the problem, mimicking the behavior of the original Gromov-Wasserstein discrepancy.
 
 %%% Non-uniqueness %%%
 Indeed, this also reveals that the objective \eqref{eq:proposed-method} is generally not strictly convex; for instance, if multiple distinct isometries exist and they produce the same feature-matching cost, they will all be global minimizers.
@@ -274,15 +289,15 @@ Indeed, this also reveals that the objective \eqref{eq:proposed-method} is gener
 Suppose that we have $(X_i,f(X_i))$ for $i=1,...,n_X$ as source data and $(Y_j,f(Y_j))$ for $j=1,...,n_Y$ as target data. Denote $\hat{\mathbb{P}}_X$ and $\hat{\mathbb{P}}_Y$ by the empirical distributions of $X$ and $Y$, respectively. Then, the empirical version of \eqref{eq:proposed-method} corresponds to
 \begin{align*}
 	%\label{eq:finite-proposed-method}
-	\inf_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathbb{E}_{(X,Y)\sim\pi}\big[\|f(X)-f(Y)\|_2^2\big] + \frac{\lambda}{2} \| D_XT_\pi - T_\pi D_Y \|_{\mathrm{HS}}^2 .
+	\inf_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathbb{E}_{(X,Y)\sim\pi}\big[\|f(X)-f(Y)\|_2^2\big] + \frac{\lambda}{2} \| D_X^{\kappa}T_\pi - T_\pi D_Y^{\kappa} \|_{\mathrm{HS}}^2 .
 \end{align*}
 In fact, the above problem can be written as a convex quadratic program (and reduces to a linear program when $\lambda = 0$):
 \begin{align}
 	\label{eq:finite-proposed-method}
-	\min_{\pi}\; &\underbrace{\mathrm{Tr}\left(C_f^\top \pi\right) + \frac{\lambda}{2n_Xn_Y} \left\| n_Y \hat{D}_X \pi - n_X \pi \hat{D}_Y \right\|_F^2}_{\eqqcolon \mathcal{L}(\pi)} \nonumber\\
+	\min_{\pi}\; &\underbrace{\mathrm{Tr}\left(C_f^\top \pi\right) + \frac{\lambda}{2n_Xn_Y} \left\| n_Y \hat{D}^{\kappa}_X \pi - n_X \pi \hat{D}^{\kappa}_Y \right\|_F^2}_{\eqqcolon \mathcal{L}(\pi)} \nonumber\\
 	\mathrm{s.t.}\quad &\pi\mathbf{1}_{n_Y} = \frac{1}{n_X} \mathbf{1}_{n_X} , \quad \pi^\top \mathbf{1}_{n_X} = \frac{1}{n_Y} \mathbf{1}_{n_Y} , \quad \pi \geq 0 ,
 \end{align}
-where $\pi \in \mathbb{R}_{+}^{n_X \times n_Y}$, $(C_f)_{ij} = \|f(X_i) - f(Y_j)\|_2^2$, $(\hat{D}_X)_{ii^\prime} = d_S(X_i,X_{i^\prime})$, and $(\hat{D}_Y)_{jj^\prime} = d_S(Y_j,Y_{j^\prime})$.
+where $\pi \in \mathbb{R}_{+}^{n_X \times n_Y}$, $(C_f)_{ij} = \|f(X_i) - f(Y_j)\|_2^2$, $(\hat{D}^{\kappa}_X)_{ii^\prime} = K_h(X_i,X_{i^\prime})$, and $(\hat{D}^{\kappa}_Y)_{jj^\prime} = K_h(Y_j,Y_{j^\prime})$.
 
 %%% Optimization algorithm %%%
 As \eqref{eq:finite-proposed-method} is a convex quadratic program, numerous standard optimization algorithms are available to find its global minimizer. In this paper, however, we focus on the Frank-Wolfe (FW) algorithm, also known as the conditional gradient (CG) method. The FW algorithm is particularly well-suited for this problem due to its ``projection-free" nature. Unlike projected gradient methods that require a potentially costly projection back onto the feasible set $\Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)$ at each iteration, the FW algorithm only requires solving a linear minimization problem over this same set. This linear subproblem (or "Linear Minimization Oracle") is often computationally simpler and more efficient to solve than the full projection, making the FW algorithm an attractive choice for optimization problems over the transport polytope.
@@ -296,7 +311,7 @@ In many practical applications, it is often more desirable to find a determinist
 where $\hat{\pi}$ is an optimal solution to \eqref{eq:finite-proposed-method} and $\mathcal{P}$ denotes the set of deterministic assignment matrices. Specifically, 
 \begin{align}
 	\label{eq:assign-matrix-space}
-	\mathcal{P} \coloneqq \{P \in \{0,1\}^{n_X \times n_Y}: P\mathbf{1}_{n_Y} = \mathbf{1}_{n_X}, \; P^\top\mathbf{1}_{n_X} = \mathbf{1}_{n_Y}\} .
+	\mathcal{P} \coloneqq \{P \in \{0,1\}^{n_X \times n_Y}: P\mathbf{1}_{n_Y} \leq \mathbf{1}_{n_X}, \; P^\top\mathbf{1}_{n_X} \leq \mathbf{1}_{n_Y}\} .
 \end{align}
 This LAP seeks the hard assignment $P$ that best aligns with the optimal soft coupling $\hat{\pi}$ and can be solved efficiently using standard methods like the Hungarian algorithm.
 
@@ -304,15 +319,16 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	\caption{Convex Quadratic Fused Transport Plan via FW and LAP Projection}
 	\label{alg:proposed-algorithm}
 	\begin{algorithmic}[1]
-		\Require Source data $\{(X_i, f(X_i))\}_{i=1}^{n_X}$, target data $\{(Y_j, f(Y_j))\}_{j=1}^{n_Y}$, regularization parameter $\lambda \ge 0$, max iters $T$
+		\Require Source data $\{(X_i, f(X_i))\}_{i=1}^{n_X}$, target data $\{(Y_j, f(Y_j))\}_{j=1}^{n_Y}$, regularization parameter $\lambda \ge 0$, distance kernel $K_h$, max iters $T$
 		
 		\State Construct matrices:
 		\Statex \hspace{\algorithmicindent} $(C_f)_{ij} \gets \|f(X_i)-f(Y_j)\|_2^2$, \quad
-		$(\hat D_X)_{ii'} \gets d_S(X_i,X_{i'})$, \quad
-		$(\hat D_Y)_{jj'} \gets d_S(Y_j,Y_{j'})$
+		$(\hat D_X^{\kappa})_{ii'} \gets K_h(X_i,X_{i'})$, \quad
+		$(\hat D_Y^{\kappa})_{jj'} \gets K_h(Y_j,Y_{j'})$
 		
-		%\Statex \hspace{\algorithmicindent} $A \gets n_Y \hat D_X$, \quad $B \gets n_X \hat D_Y$
-		\State Initialize $\pi^{(0)} \gets \frac{1}{n_X n_Y}\mathbf{1}_{n_X}\mathbf{1}_{n_Y}^\top$
+		%\Statex \hspace{\algorithmicindent} $A \gets n_Y \hat D_X^{\kappa}$, \quad $B \gets n_X \hat D_Y^{\kappa}$
+		%\State Initialize $\pi^{(0)} \gets \frac{1}{n_X n_Y}\mathbf{1}_{n_X}\mathbf{1}_{n_Y}^\top$
+		\State Initialize $\pi^{(0)} \gets \hat{\mathbb{P}}_X \otimes \hat{\mathbb{P}}_Y$
 		
 		\For{$t=0,...,T$}
 		%\State $\nabla F(\pi^{(t)}) \gets C_f + \frac{\lambda}{n_X n_Y}\!\left[A^\top(A\pi^{(t)}-\pi^{(t)}B) - (A\pi^{(t)}-\pi^{(t)}B)B^\top\right]$
@@ -341,13 +357,25 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 
 \appendix
 \section{Appendix}
+\subsection{Proof for \cref{lem:regularization-term}}\label{pf:lem:regularization-term}
+\begin{proof}
+	For $g \in L^2(S,\mathbb{P}_Y)$, observe that
+	\begin{align*}
+		&(D_X^{\kappa}T_{\pi}g)(x) = \mathbb{E}\Big[K_h(x,X)\mathbb{E}\left[g(Y) \mid X\right]\Big] = \int_S \Gamma_\pi^1(x,y)g(y)\mathbb{P}_Y(dy) , \\
+		&(T_{\pi}D_Y^{\kappa}g)(x) = \mathbb{E}\Big[(D_Y^{\kappa}g)(Y) \mid X = x\Big] = \int_S \Gamma_\pi^2(x,y)g(y) \mathbb{P}_Y(dy) .
+	\end{align*}
+	Since $K_h$ is bounded, $D_X^{\kappa}T_{\pi} - T_{\pi}D_Y^{\kappa}$ is a well-defined Hilbert-Schmidt operator with a kernel $\Gamma_\pi(x,y)$:
+	\begin{align*}
+		\| D_X^{\kappa}T_{\pi} - T_{\pi}D_Y^{\kappa} \|_{\mathrm{HS}}^2 = \int_S\int_S \Gamma_\pi(x,y)^2\mathbb{P}_X(dx)\mathbb{P}_Y(dy) \leq \frac{(\sup\kappa)^2}{h^2} .
+	\end{align*}
+\end{proof}
 
 \subsection{Proof for \cref{thm:convex-relaxation}}\label{pf:thm:convex-relaxation}
 \begin{proof}
-	Refer to \cref{cor:regularization-term} to confirm that the operator $D_XT_{\pi} - T_{\pi}D_Y$ is well-defined and Hilbert--Schmidt for any $\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)$. 
+	Refer to \cref{lem:regularization-term} to confirm that the operator $D_X^{\kappa}T_{\pi} - T_{\pi}D_Y^{\kappa}$ is well-defined and Hilbert--Schmidt for any $\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)$. 
 	To establish convexity of \eqref{eq:proposed-method}, it suffices to show that 
 	\begin{align*}
-	\pi \;\mapsto\; \|D_XT_\pi - T_\pi D_Y\|_{\mathrm{HS}}^2
+	\pi \;\mapsto\; \|D_X^{\kappa}T_\pi - T_\pi D_Y^{\kappa}\|_{\mathrm{HS}}^2
 	\end{align*}
 	is convex on $\Pi(\mathbb{P}_X,\mathbb{P}_Y)$.
 	
@@ -371,73 +399,53 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	T_{\pi_t} = t\,T_{\pi_1} + (1-t)\,T_{\pi_2}.
 	\end{align*}
 	
-	Because $D_X$ and $D_Y$ are linear operators, it follows that
+	Because $D_X^{\kappa}$ and $D_Y^{\kappa}$ are linear operators, it follows that
 	\begin{align*}
-	D_XT_{\pi_t} - T_{\pi_t}D_Y
-	= t\,(D_XT_{\pi_1} - T_{\pi_1}D_Y)
-	+ (1-t)\,(D_XT_{\pi_2} - T_{\pi_2}D_Y).
+	D_X^{\kappa}T_{\pi_t} - T_{\pi_t}D_Y^{\kappa}
+	= t\,(D_X^{\kappa}T_{\pi_1} - T_{\pi_1}D_Y^{\kappa})
+	+ (1-t)\,(D_X^{\kappa}T_{\pi_2} - T_{\pi_2}D_Y^{\kappa}).
 	\end{align*}
-	Denoting $A_i := D_XT_{\pi_i} - T_{\pi_i}D_Y$ $(i=1,2)$ and $A_t := D_XT_{\pi_t} - T_{\pi_t}D_Y$, 
+	Denoting $A_i := D_X^{\kappa}T_{\pi_i} - T_{\pi_i}D_Y^{\kappa}$ $(i=1,2)$ and $A_t := D_X^{\kappa}T_{\pi_t} - T_{\pi_t}D_Y^{\kappa}$, 
 	we have $A_t = tA_1 + (1-t)A_2$. 
 	Since $\|\cdot\|_{\mathrm{HS}}^2$ is convex, we obtain
 	\begin{align*}
-	\|A_t\|_{\mathrm{HS}}^2
+	\|A_t\|_{\mathrm{HS}}^2rm
 	= \|tA_1 + (1-t)A_2\|_{\mathrm{HS}}^2
 	\le t\,\|A_1\|_{\mathrm{HS}}^2 + (1-t)\,\|A_2\|_{\mathrm{HS}}^2.
 	\end{align*}
-	Therefore, $\pi \mapsto \|D_XT_\pi - T_\pi D_Y\|_{\mathrm{HS}}^2$ is convex on $\Pi(\mathbb{P}_X,\mathbb{P}_Y)$. 
-\end{proof}
-
-\subsection{Proof for \cref{cor:regularization-term}}\label{pf:cor:regularization-term}
-\begin{proof}
-	%Let $\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)$ be arbitrary, and let $k(,\cdot,\cdot): \mathcal{B}(S) \times S \to [0,1]$ be a Markov kernel such that $\pi(dx,dy) = k(dy,x)\mathbb{P}_X(dx)$, where $\mathcal{B}(S)$ is the Borel $\sigma$-algebra of $S$. 
-	
-	For $g \in L^2(S,\mathbb{P}_Y)$, observe that
-	\begin{align*}
-		%		&(D_XT_{\pi}g)(x) = \mathbb{E}\Big[d_S(x,X)\mathbb{E}\left[g(Y) \mid X\right]\Big] = \mathbb{E}\Big[g(Y) \mathbb{E}\left[d_S(x,X) \mid Y\right]\Big] = \int_S K_1^\pi(x,y)g(y)\mathbb{P}_Y(dy) , \\
-		%		&(T_{\pi}D_Yg)(x) = \mathbb{E}\Big[(D_Yg)(Y) \mid X = x\Big] = \int_S\left(\int_S d_S(y,y^\prime)g(y^\prime)\mathbb{P}_Y(dy^\prime)\right) k(dy,x) = \int_S K_2^\pi(x,y^\prime)g(y^\prime) \mathbb{P}_Y(dy^\prime) ,
-		&(D_XT_{\pi}g)(x) = \mathbb{E}\Big[d_S(x,X)\mathbb{E}\left[g(Y) \mid X\right]\Big] = \int_S K_1^\pi(x,y)g(y)\mathbb{P}_Y(dy) , \\
-		&(T_{\pi}D_Yg)(x) = \mathbb{E}\Big[(D_Yg)(Y) \mid X = x\Big] = \int_S K_2^\pi(x,y)g(y) \mathbb{P}_Y(dy) .
-	\end{align*}
-	Since $\sup_{x,y \in S}d_S(x,y) \leq 1$, $D_XT_{\pi} - T_{\pi}D_Y$ is a well-defined Hilbert-Schmidt operator with a kernel $\Gamma^\pi(x,y)$:
-	\begin{align*}
-		\| D_XT_{\pi} - T_{\pi}D_Y \|_{\mathrm{HS}}^2 = \int_S\int_S \Gamma^\pi(x,y)^2\mathbb{P}_X(dx)\mathbb{P}_Y(dy) \leq 1.
-	\end{align*}
+	Therefore, $\pi \mapsto \|D_X^{\kappa}T_\pi - T_\pi D_Y^{\kappa}\|_{\mathrm{HS}}^2$ is convex on $\Pi(\mathbb{P}_X,\mathbb{P}_Y)$. 
 \end{proof}
 
 \subsection{Proof for \cref{prop:solution}}\label{pf:prop:solution}
 \begin{proof}
 	Since $Y = T(X)$ almost surely, for any $(x,y) \in \mathrm{supp}(\pi)$, we have
 	\begin{align*}
-		K_1^\pi(x,y) &= \mathbb{E}[d_S(x,X)\mid Y=y] = d_S\bigl(x,T^{-1}(y)\bigr), \\
-		K_2^\pi(x,y) &= \mathbb{E}[d_S(y,Y)\mid X=x] = d_S\bigl(y,T(x)\bigr).
+		\Gamma_\pi^1(x,y) &= \mathbb{E}[K_h(x,X)\mid Y=y] = \frac{1}{h}\kappa\left(\frac{d_S\bigl(x,T^{-1}(y)\bigr)}{h}\right), \\
+		\Gamma_\pi^2(x,y) &= \mathbb{E}[K_h(y,Y)\mid X=x] = \frac{1}{h}\kappa\left(\frac{d_S\bigl(y,T(x)\bigr)}{h}\right).
 	\end{align*}
 	Hence, for such $(x,y)$,
 	\begin{align*}
-		\Gamma^\pi(x,y)
-		= K_1^\pi(x,y) - K_2^\pi(x,y)
-		= d_S\bigl(x,T^{-1}(y)\bigr) - d_S\bigl(y,T(x)\bigr).
+		\Gamma_\pi(x,y)
+		= \Gamma_\pi^1(x,y) - \Gamma_\pi^2(x,y)
+		= \frac{1}{h}\left[\kappa\left(\frac{d_S\bigl(x,T^{-1}(y)\bigr)}{h}\right) - \kappa\left(\frac{d_S\bigl(y,T(x)\bigr)}{h}\right)\right] .
 	\end{align*}
 	Now, setting $y = T(x')$ gives
 	\begin{align*}
-		\Gamma^\pi\bigl(x,T(x')\bigr)
-		= d_S(x,x') - d_S\bigl(T(x),T(x')\bigr).
+		\Gamma_\pi\bigl(x,T(x')\bigr)
+		= \frac{1}{h}\left[\kappa\left(\frac{d_S\bigl(x,x^\prime\bigr)}{h}\right) - \kappa\left(\frac{d_S\bigl(T(x),T(x^\prime)\bigr)}{h}\right)\right] .
 	\end{align*}
+		
+	($\Rightarrow$) Suppose that $\|D_X^{\kappa}T_\pi - T_\pi D_Y^{\kappa}\|_{\mathrm{HS}}^2 = 0$. Then $\Gamma_\pi = 0$ holds for $\pi$-almost every $(x,y)$, and in particular, for pairs $(x,T(x'))$ with respect to $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x')$. By the strict monotone property of $\kappa$, $d_S(T(x),T(x^\prime)) = d_S(x,x^\prime)$ holds for $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x^\prime)$.
 	
-	($\Rightarrow$) Suppose that $\|D_XT_\pi - T_\pi D_Y\|_{\mathrm{HS}}^2 = 0$.  
-	Then $\Gamma^\pi = 0$ holds for $\pi$-almost every $(x,y)$, and in particular, for pairs $(x,T(x'))$ with respect to $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x')$.  
-	Hence $d_S(T(x),T(x')) = d_S(x,x')$ holds for $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x')$.
-	
-	($\Leftarrow$) Conversely, if $d_S(T(x),T(x')) = d_S(x,x')$ holds for $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x')$, substituting this into the above expression yields $\Gamma^\pi(x,T(x')) = 0$ for $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x')$.  
-	Therefore, $\Gamma^\pi = 0$ holds for $\pi$-almost every $(x,y)$, which implies that the Hilbert–Schmidt norm is zero.
+	($\Leftarrow$) Conversely, if $d_S(T(x),T(x')) = d_S(x,x')$ holds for $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x')$, substituting this into the above expression yields $\Gamma_\pi(x,T(x')) = 0$ for $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x')$. Consequently, $\Gamma_\pi = 0$ holds for $\pi$-almost every $(x,y)$, which implies that the Hilbert–Schmidt norm is zero.
 	
 	Finally, if $T$ is continuous and $\mathrm{supp}(\mathbb{P}_X) = S$, then the function
 	\begin{align*}
-		F(x,x') := d_S(x,x') - d_S(T(x),T(x'))
+		F(x,x') := K_h(x,x') - K_h(T(x),T(x'))
 	\end{align*}
 	is continuous and vanishes on the dense set $\mathrm{supp}(\mathbb{P}_X) \times \mathrm{supp}(\mathbb{P}_X)$.  
-	By continuity, $F \equiv 0$ on $S \times S$.  
-	Thus, $d_S(T(x),T(x')) = d_S(x,x')$ holds for all $x,x' \in S$, implying that $T$ is an isometry on $S$.
+	By continuity, $F \equiv 0$ on $S \times S$.
+	Again by the strict monotonicity of $\kappa$, $d_S(T(x),T(x')) = d_S(x,x')$ holds for all $x,x' \in S$, implying that $T$ is an isometry on $S$.
 \end{proof}
 
 
