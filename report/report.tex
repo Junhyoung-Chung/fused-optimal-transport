@@ -214,7 +214,7 @@ The existence follows from standard weak compactness of the set of couplings $\P
 \paragraph{Proposed method.} Our proposed method introduces a surrogate loss for the second term in \eqref{eq:pi-fused-ot}, thereby ensuring that the problem is convex.
 \begin{definition}[Distance kernel]
 	\label{def:kernel}
-	For a fixed bandwidth $h > 0$, a function $K_h: S \times S \to \mathbb{R}_+$ is said to be a \emph{distance kernel} if there exists a bounded, (strictly) monotone $\kappa: \mathbb{R}_+ \to \mathbb{R}_+$ such that
+	For a fixed bandwidth $h > 0$, a function $K_h: S \times S \to \mathbb{R}_+$ is said to be a \emph{distance kernel} if there exists a bounded, continuous, (strictly) monotone $\kappa: \mathbb{R}_+ \to \mathbb{R}_+$ such that
 	\begin{align*}
 		K_h(x,x^\prime) = \frac{1}{h}\kappa\left(\frac{d_S(x,x^\prime)}{h}\right) .
 	\end{align*}
@@ -292,7 +292,7 @@ Indeed, this also reveals that the objective \eqref{eq:proposed-method} is gener
 
 \paragraph{Motivation.}  
 We provide a motivation for comparing our convex surrogate with the Gromov--Wasserstein penalty.  
-Setting $\kappa(x) = x$, consider the following $3 \times 3$ matching problem:
+Setting $K_h(x,x^\prime)=d_S(x,x^\prime)$, consider the following $3 \times 3$ matching problem:
 \begin{align*}
 	D_X = \begin{pmatrix}
 		0 & x_{12} & x_{13} \\
@@ -338,7 +338,7 @@ Thus, when $a \neq 0$, the unique minimizer $t_{\mathrm{CS}}^\ast$ is given by
 \end{align*}
 Similarly, we can readily derive
 \begin{align*}
-	\mathbb{E}_{\substack{(X,Y)\sim\pi\\(X^\prime,Y^\prime)\sim\pi}}
+	\mathbb{E}_{\substack{(X,Y)\sim\pi(t)\\(X^\prime,Y^\prime)\sim\pi(t)}}
 	\Big[\big|d_S(X,X^\prime)-d_S(Y,Y^\prime)\big|^2\Big] = \mathrm{const.} - \frac{2}{3}\mathrm{Tr}(D_X \pi(t) D_Y \pi(t)^\top) ,
 \end{align*}
 and
@@ -420,13 +420,43 @@ Comparing the two endpoints, the minimizer $t_{\mathrm{GW}}^\ast$ can be express
 	\label{fig:motivating-example}
 \end{figure}
 %%% Figure explanation: A >> B %%%
-Figure~\ref{fig:motivating-example} visualizes the case when $A \gg B \approx 0$. While both penalties encourage small values of $t$, the proposed convex surrogate attains its minimum near zero, whereas the GW penalty reaches its minimum exactly at $t = 0$. Nevertheless, due to its concave shape, the GW objective may converge to the opposite extreme ($t = 1$) depending on the initialization.
+Figure~\ref{fig:motivating-example} visualizes the case when $A \gg B \approx 0$. While both penalties encourage small values of $t$, the proposed convex surrogate attains its minimum near zero, whereas the GW penalty reaches its minimum exactly at $t_{\mathrm{GW}}^\ast = 0$. Nevertheless, due to its concave shape, the GW objective may converge to the opposite extreme ($t = 1$) depending on the initialization.
 
 %%% Conclusion %%%
 Overall, this example highlights the difference between the proposed convex surrogate and the GW penalty. While the GW objective exhibits a concave behavior that often results in extreme solutions (corresponding to permutation-like transport plans), our convex surrogate yields a smooth and well-behaved solution. In particular, the minimizer $t_{\mathrm{CS}}^\ast$ varies continuously with the geometric discrepancy, while ensuring the convexity. This property ensures numerical stability and uniqueness of the solution, making the convex surrogate more suitable for optimization and statistical analysis, especially in complex settings where the GW 
-penalty may fall into suboptimal solutions due to its non-convexity.
+penalty might fall into suboptimal solutions due to its non-convexity.
 
 \section{Algorithm}
+%%% Pseudocode %%%
+\begin{algorithm}[t]
+	\caption{Convex Quadratic Fused Transport Plan via FW and LAP Projection}
+	\label{alg:proposed-algorithm}
+	\begin{algorithmic}[1]
+		\Require Source data $\{(X_i, f(X_i))\}_{i=1}^{n_X}$, target data $\{(Y_j, f(Y_j))\}_{j=1}^{n_Y}$, weight parameter $0 \leq \alpha \leq 1$, distance kernel $K_h$, max iters $T$
+		
+		\State Construct matrices:
+		\Statex \hspace{\algorithmicindent} $(C_f)_{ij} \gets \|f(X_i)-f(Y_j)\|_2^2$, \quad
+		$(\hat D_X^{\kappa})_{ii'} \gets K_h(X_i,X_{i'})$, \quad
+		$(\hat D_Y^{\kappa})_{jj'} \gets K_h(Y_j,Y_{j'})$
+		
+		%\Statex \hspace{\algorithmicindent} $A \gets n_Y \hat D_X^{\kappa}$, \quad $B \gets n_X \hat D_Y^{\kappa}$
+		%\State Initialize $\pi^{(0)} \gets \frac{1}{n_X n_Y}\mathbf{1}_{n_X}\mathbf{1}_{n_Y}^\top$
+		\State Initialize $\pi^{(0)} \gets \hat{\mathbb{P}}_X \otimes \hat{\mathbb{P}}_Y$
+		
+		\For{$t=0,...,T$}
+		%\State $\nabla F(\pi^{(t)}) \gets C_f + \frac{\lambda}{n_X n_Y}\!\left[A^\top(A\pi^{(t)}-\pi^{(t)}B) - (A\pi^{(t)}-\pi^{(t)}B)B^\top\right]$
+		\State Calculate the gradient $\nabla \mathcal{L}_{n_Xn_Y}(\pi^{(t)})$ in \eqref{eq:finite-proposed-method}
+		\State Take $\tilde{\pi}^{(t)} \gets \arg\min_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathrm{Tr}(\nabla \mathcal{L}_{n_Xn_Y}(\pi^{(t)})^\top \pi)$
+		\State $\pi^{(t+1)} \gets (1-\gamma_t)\pi^{(t)} + \gamma_t \tilde{\pi}^{(t)}$ for some $0 < \gamma_t < 1$
+		\EndFor
+		\State $\hat\pi \gets \pi^{(T)}$
+		\State \textbf{Optional (LAP projection):} $\displaystyle
+		\hat P \gets \arg\max_{P \in \mathcal{P}} \mathrm{Tr}(P^\top \hat\pi)$, where $\mathcal{P}$ is as defined in \eqref{eq:assign-matrix-space}
+		\State \textbf{Return:} $\hat\pi$ (and optionally $\hat P$)
+	\end{algorithmic}
+\end{algorithm}
+
+%%% Empirical loss %%%
 Suppose that we have $(X_i,f(X_i))$ for $i=1,...,n_X$ as source data and $(Y_j,f(Y_j))$ for $j=1,...,n_Y$ as target data. Denote $\hat{\mathbb{P}}_X$ and $\hat{\mathbb{P}}_Y$ by the empirical distributions of $X$ and $Y$, respectively. Then, the empirical version of \eqref{eq:proposed-method} corresponds to
 \begin{align*}
 	%\label{eq:finite-proposed-method}
@@ -435,7 +465,7 @@ Suppose that we have $(X_i,f(X_i))$ for $i=1,...,n_X$ as source data and $(Y_j,f
 In fact, the above problem can be written as a convex quadratic program (and reduces to a linear program when $\alpha = 0$):
 \begin{align}
 	\label{eq:finite-proposed-method}
-	\min_{\pi}\; &\underbrace{(1-\alpha)\mathrm{Tr}\left(C_f^\top \pi\right) + \frac{\alpha}{2n_Xn_Y} \left\| n_Y \hat{D}^{\kappa}_X \pi - n_X \pi \hat{D}^{\kappa}_Y \right\|_F^2}_{\eqqcolon \mathcal{L}(\pi)} \nonumber\\
+	\min_{\pi}\; &\underbrace{(1-\alpha)\mathrm{Tr}\left(C_f^\top \pi\right) + \frac{\alpha}{2n_Xn_Y} \left\| n_Y \hat{D}^{\kappa}_X \pi - n_X \pi \hat{D}^{\kappa}_Y \right\|_F^2}_{\eqqcolon \mathcal{L}_{n_Xn_Y}(\pi)} \nonumber\\
 	\mathrm{s.t.}&\quad \pi\mathbf{1}_{n_Y} = \frac{1}{n_X} \mathbf{1}_{n_X} , \quad \pi^\top \mathbf{1}_{n_X} = \frac{1}{n_Y} \mathbf{1}_{n_Y} , \quad \pi \geq 0 ,
 \end{align}
 where $\pi \in \mathbb{R}_{+}^{n_X \times n_Y}$, $(C_f)_{ij} = \|f(X_i) - f(Y_j)\|_2^2$, $(\hat{D}^{\kappa}_X)_{ii^\prime} = K_h(X_i,X_{i^\prime})$, and $(\hat{D}^{\kappa}_Y)_{jj^\prime} = K_h(Y_j,Y_{j^\prime})$.
@@ -456,36 +486,16 @@ where $\hat{\pi}$ is an optimal solution to \eqref{eq:finite-proposed-method} an
 \end{align}
 This LAP seeks the hard assignment $P$ that best aligns with the optimal soft coupling $\hat{\pi}$ and can be solved efficiently using standard methods like the Hungarian algorithm.
 
-\begin{algorithm}[t]
-	\caption{Convex Quadratic Fused Transport Plan via FW and LAP Projection}
-	\label{alg:proposed-algorithm}
-	\begin{algorithmic}[1]
-		\Require Source data $\{(X_i, f(X_i))\}_{i=1}^{n_X}$, target data $\{(Y_j, f(Y_j))\}_{j=1}^{n_Y}$, weight parameter $0 \leq \alpha \leq 1$, distance kernel $K_h$, max iters $T$
-		
-		\State Construct matrices:
-		\Statex \hspace{\algorithmicindent} $(C_f)_{ij} \gets \|f(X_i)-f(Y_j)\|_2^2$, \quad
-		$(\hat D_X^{\kappa})_{ii'} \gets K_h(X_i,X_{i'})$, \quad
-		$(\hat D_Y^{\kappa})_{jj'} \gets K_h(Y_j,Y_{j'})$
-		
-		%\Statex \hspace{\algorithmicindent} $A \gets n_Y \hat D_X^{\kappa}$, \quad $B \gets n_X \hat D_Y^{\kappa}$
-		%\State Initialize $\pi^{(0)} \gets \frac{1}{n_X n_Y}\mathbf{1}_{n_X}\mathbf{1}_{n_Y}^\top$
-		\State Initialize $\pi^{(0)} \gets \hat{\mathbb{P}}_X \otimes \hat{\mathbb{P}}_Y$
-		
-		\For{$t=0,...,T$}
-		%\State $\nabla F(\pi^{(t)}) \gets C_f + \frac{\lambda}{n_X n_Y}\!\left[A^\top(A\pi^{(t)}-\pi^{(t)}B) - (A\pi^{(t)}-\pi^{(t)}B)B^\top\right]$
-		\State Calculate the gradient $\nabla \mathcal{L}(\pi^{(t)})$ in \eqref{eq:finite-proposed-method}
-		\State Take $\tilde{\pi}^{(t)} \gets \arg\min_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathrm{Tr}(\nabla \mathcal{L}(\pi^{(t)})^\top \pi)$
-		\State $\pi^{(t+1)} \gets (1-\gamma_t)\pi^{(t)} + \gamma_t \tilde{\pi}^{(t)}$ for some $0 < \gamma_t < 1$
-		\EndFor
-		\State $\hat\pi \gets \pi^{(T)}$
-		\State \textbf{Optional (LAP projection):} $\displaystyle
-		\hat P \gets \arg\max_{P \in \mathcal{P}} \mathrm{Tr}(P^\top \hat\pi)$, where $\mathcal{P}$ is as defined in \eqref{eq:assign-matrix-space}
-		\State \textbf{Return:} $\hat\pi$ (and optionally $\hat P$)
-	\end{algorithmic}
-\end{algorithm}
+%%% Pseudo code description %%%
 
+%%% Computation complexity %%%
 
-
+%%% Consistency %%%
+\paragraph{Consistency}
+\begin{theorem}
+	\label{thm:consistency}
+	blah...
+\end{theorem}
 
 %%% References %%%
 \bibliographystyle{abbrvnat}
@@ -507,7 +517,7 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	\end{align*}
 	Since $K_h$ is bounded, $D_X^{\kappa}T_{\pi} - T_{\pi}D_Y^{\kappa}$ is a well-defined Hilbert-Schmidt operator with a kernel $\Gamma_\pi(x,y)$:
 	\begin{align*}
-		\| D_X^{\kappa}T_{\pi} - T_{\pi}D_Y^{\kappa} \|_{\mathrm{HS}}^2 = \int_S\int_S \Gamma_\pi(x,y)^2\mathbb{P}_X(dx)\mathbb{P}_Y(dy) \leq \frac{(\sup\kappa)^2}{h^2} .
+		\| D_X^{\kappa}T_{\pi} - T_{\pi}D_Y^{\kappa} \|_{\mathrm{HS}}^2 = \int_S\int_S \Gamma_\pi(x,y)^2\mathbb{P}_X(dx)\mathbb{P}_Y(dy) \leq \frac{4(\sup\kappa)^2}{h^2} .
 	\end{align*}
 \end{proof}
 
@@ -550,7 +560,7 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	we have $A_t = tA_1 + (1-t)A_2$. 
 	Since $\|\cdot\|_{\mathrm{HS}}^2$ is convex, we obtain
 	\begin{align*}
-	\|A_t\|_{\mathrm{HS}}^2rm
+	\|A_t\|_{\mathrm{HS}}^2
 	= \|tA_1 + (1-t)A_2\|_{\mathrm{HS}}^2
 	\le t\,\|A_1\|_{\mathrm{HS}}^2 + (1-t)\,\|A_2\|_{\mathrm{HS}}^2.
 	\end{align*}
@@ -578,7 +588,7 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	
 	($\Leftarrow$) If $d_S(T(x),T(x')) = d_S(x,x')$ holds for $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x')$, substituting this into the above expression yields $\Gamma_\pi(x,T(x')) = 0$ for $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x')$. Consequently, $\Gamma_\pi = 0$ holds for $\pi$-almost every $(x,y)$, which implies that the Hilbert–Schmidt norm is zero.
 	
-	($\Rightarrow$) Now, assume that $\kappa$ is strictly monotone. If $\|D_X^{\kappa}T_\pi - T_\pi D_Y^{\kappa}\|_{\mathrm{HS}}^2 = 0$, then $\Gamma_\pi = 0$ holds for $\pi$-almost every $(x,y)$, and in particular, for pairs $(x,T(x'))$ with respect to $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x')$. By the strict monotone property of $\kappa$, $d_S(T(x),T(x^\prime)) = d_S(x,x^\prime)$ holds for $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x^\prime)$.
+	($\Rightarrow$) Now, assume that $\kappa$ is strictly monotone. If $\|D_X^{\kappa}T_\pi - T_\pi D_Y^{\kappa}\|_{\mathrm{HS}}^2 = 0$, then $\Gamma_\pi = 0$ holds for $\mathbb{P}_X \otimes \mathbb{P}_Y$-almost every $(x,y)$, and in particular, for pairs $(x,T(x'))$ with respect to $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x')$. By the strict monotone property of $\kappa$, $d_S(T(x),T(x^\prime)) = d_S(x,x^\prime)$ holds for $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x^\prime)$.
 	
 	Finally, if $T$ is continuous and $\mathrm{supp}(\mathbb{P}_X) = S$, then the function
 	\begin{align*}
@@ -589,5 +599,88 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	Again by the strict monotonicity of $\kappa$, $d_S(T(x),T(x')) = d_S(x,x')$ holds for all $x,x' \in S$, implying that $T$ is an isometry on $S$.
 \end{proof}
 
+\subsection{Proof for \cref{thm:consistency}}\label{pf:thm:consistency}
+\begin{proof}
+	\begin{lemma}
+		\label{lem:smooth-loss}
+		For all $n_X,n_Y \geq 1$ and $\pi_1,\pi_2 \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)$,
+		\begin{align}
+			\Big\| \nabla \mathcal{L}_{n_Xn_Y}(\pi_1) - \nabla \mathcal{L}_{n_Xn_Y}(\pi_2) \Big\|_F \leq \alpha \cdot \frac{n_{\max}}{n_{\min}} \left(\|\hat{D}_X^\kappa\|_{\mathrm{op}} + \|\hat{D}_Y^\kappa\|_{\mathrm{op}}\right)^2 \|\pi_1 - \pi_2\|_F .
+		\end{align} 
+	\end{lemma}
+	\begin{proof}
+		See Appendix~\ref{pf:lem:smooth-loss}.
+	\end{proof}
+	\cref{lem:smooth-loss} guarantees the smoothness of $\mathcal{L}_{n_Xn_Y}$.
+	
+	\begin{lemma}
+		\label{lem:FW-convergence}
+		Let $\{\pi^{(t)}: t \geq 0\}$ be the sequence of iterates generated by Algorithm~\ref{alg:proposed-algorithm} with
+		\begin{align*}
+			\gamma_t = \frac{2}{t+2} ,
+		\end{align*}
+		for each $t$. Then, for any $t \geq 1$,
+		\begin{align*}
+			\mathcal{L}_{n_Xn_Y}(\pi^{(t)}) - \inf\mathcal{L}_{n_Xn_Y} \leq \frac{2\alpha}{n_{\min}(t+1)} \left(\|\hat{D}_X^\kappa\|_{\mathrm{op}} + \|\hat{D}_Y^\kappa\|_{\mathrm{op}}\right)^2 .
+		\end{align*}
+	\end{lemma}
+	\begin{proof}
+		See Appendix~\ref{pf:lem:FW-convergence}.
+	\end{proof}
+\end{proof}
+
+\subsection{Proof for \cref{lem:smooth-loss}}\label{pf:lem:smooth-loss}
+\begin{proof}
+	For brevity, denote $A \coloneqq n_Y \hat{D}_X^\kappa$ and $B \coloneqq n_X \hat{D}_Y^\kappa$. Observe that $A$ and $B$ are symmetric. Hence, the gradient of $\nabla \mathcal{L}_{n_Xn_Y}(\pi)$ can be calculated as
+	\begin{align*}
+		\alpha^{-1}(n_Xn_Y)\nabla \mathcal{L}_{n_Xn_Y}(\pi) = A^2\pi + \pi B^2 - 2A \pi B + \mathrm{const.} ,
+	\end{align*}
+	where the constant does not depend on $\pi$. Thus, the triangle inequality and the Cauchy-Schwarz inequality yield that
+	\begin{align*}
+		\alpha^{-1}(n_Xn_Y) \Big\| \nabla \mathcal{L}_{n_Xn_Y}(\pi_1) - \nabla \mathcal{L}_{n_Xn_Y}(\pi_2) \Big\|_F &\leq \left(\|A\|_{\mathrm{op}} + \|B\|_{\mathrm{op}}\right)^2\| \pi_1 - \pi_2 \|_F \\
+		&\leq \left(n_Y\|\hat{D}_X^\kappa\|_{\mathrm{op}} + n_X\|\hat{D}_Y^\kappa\|_{\mathrm{op}}\right)^2\| \pi_1 - \pi_2 \|_F \\
+		&\leq n_{\max}^2 \left(\|\hat{D}_X^\kappa\|_{\mathrm{op}} + \|\hat{D}_Y^\kappa\|_{\mathrm{op}}\right)^2\| \pi_1 - \pi_2 \|_F .
+	\end{align*}
+	This completes the proof.
+\end{proof}
+
+\subsection{Proof for \cref{lem:FW-convergence}}\label{pf:lem:FW-convergence}
+\begin{proof}
+	This is a standard proof to show the convergence of the FW algorithm. Let 
+	\begin{align*}
+		\beta \coloneqq \alpha \cdot \frac{n_{\max}}{n_{\min}} \left(\|\hat{D}_X^\kappa\|_{\mathrm{op}} + \|\hat{D}_Y^\kappa\|_{\mathrm{op}}\right)^2 .
+	\end{align*}
+	Let $\pi^\ast \in \argmin_{\pi} \mathcal{L}_{n_Xn_Y}(\pi)$, whose existence is guaranteed by the convexity. Then,
+	\begin{align*}
+		\mathcal{L}_{n_Xn_Y}(\pi^{(t+1)}) - \mathcal{L}_{n_Xn_Y}(\pi^{(t)}) &\leq \mathrm{Tr}\left(\nabla \mathcal{L}_{n_Xn_Y}(\pi^{(t)})^\top (\pi^{(t+1)} - \pi^{(t)})\right) + \frac{\beta}{2} \|\pi^{(t+1)} - \pi^{(t)} \|_F^2 \\
+		&= \gamma_t\mathrm{Tr}\left(\nabla \mathcal{L}_{n_Xn_Y}(\pi^{(t)})^\top (\tilde{\pi}^{(t)} - \pi^{(t)})\right) + \frac{\beta}{2} \|\pi^{(t+1)} - \pi^{(t)} \|_F^2 \\
+		&\leq \gamma_t \mathrm{Tr}\left(\nabla \mathcal{L}_{n_Xn_Y}(\pi^{(t)})^\top (\pi^\ast - \pi^{(t)})\right) + \frac{\beta}{2} \|\pi^{(t+1)} - \pi^{(t)} \|_F^2 \\
+		&\leq \gamma_t \left(\inf\mathcal{L}_{n_Xn_Y} - \mathcal{L}_{n_Xn_Y}(\pi^{(t)})\right) + \frac{\beta}{2} \|\pi^{(t+1)} - \pi^{(t)} \|_F^2 .
+	\end{align*}
+	The first inequality comes from \cref{lem:smooth-loss}; the third inequality is due to the definition of $\tilde{\pi}^{(t)}$; and the last inequality is from the convexity of $\mathcal{L}_{n_Xn_Y}$. 
+	
+	Considering that
+	\begin{align*}
+		\|\pi\|_F^2 = \sum_{ij} \pi_{ij}^2 \leq (\max_{i,j}\pi_{ij}) \sum_{ij} \pi_{ij} = \max_{i,j} \pi_{ij} \leq \frac{1}{n_{\max}} ,
+	\end{align*}
+	we obtain
+	\begin{align*}
+		%\|\pi^{(t+1)} - \pi^{(t)} \|_F = \gamma_t \|\tilde{\pi}^{(t)} - \pi^{(t)} \|_F \leq 2\gamma_t \sqrt{\frac{n_{\min}}{n_{\max}}} .
+		\|\pi^{(t+1)} - \pi^{(t)} \|_F = \gamma_t \|\tilde{\pi}^{(t)} - \pi^{(t)} \|_F \leq 2\gamma_t \sqrt{\frac{1}{n_{\max}}} .
+	\end{align*}
+	Then, it follows that
+	\begin{align*}
+		\mathcal{L}_{n_Xn_Y}(\pi^{(t+1)}) - \inf\mathcal{L}_{n_Xn_Y} &\leq (1 - \gamma_t)\left(\mathcal{L}_{n_Xn_Y}(\pi^{(t)}) - \inf\mathcal{L}_{n_Xn_Y}\right) + 2\beta\gamma_t^2\cdot\frac{1}{n_{\max}} \\
+		&= \frac{t}{t+2}\left(\mathcal{L}_{n_Xn_Y}(\pi^{(t)}) - \inf\mathcal{L}_{n_Xn_Y}\right) + \frac{2\beta}{(t+2)^2}\cdot\frac{1}{n_{\max}} .
+	\end{align*}
+	By this inequality, we have
+	\begin{align*}
+		\mathcal{L}_{n_Xn_Y}(\pi^{(1)}) - \inf\mathcal{L}_{n_Xn_Y} \leq \frac{\beta}{2}\cdot\frac{1}{n_{\max}} \leq \frac{2\beta}{2}\cdot\frac{1}{n_{\max}} .
+	\end{align*}
+	Therefore, using the mathematical induction, we arrive at
+	\begin{align*}
+		\mathcal{L}_{n_Xn_Y}(\pi^{(t+1)}) - \inf\mathcal{L}_{n_Xn_Y} \leq \left(\frac{t}{t+2} \cdot \frac{2\beta}{t+1} + \frac{2\beta}{(t+2)^2}\right)\cdot\frac{1}{n_{\max}} \leq \frac{2\beta}{t+2}\cdot\frac{1}{n_{\max}} .
+	\end{align*}
+\end{proof}
 
 \end{document}
