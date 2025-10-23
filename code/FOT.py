@@ -7,6 +7,14 @@ import ot
 # Utility: kernels & distances
 # -------------------------------
 
+def kappa_linear_cutoff(t, k=1.0):
+    """
+    Linearly decreasing kernel: kappa(t) = max(0, k - t).
+    Vectorized version works for scalar or array t.
+    """
+    t = np.asarray(t)
+    return np.maximum(0.0, k - t)
+
 def kappa_decreasing_exp(t):
     """Strictly decreasing and bounded (to 1 at t=0): exp(-t**2)."""
     return np.exp(-t**2)
@@ -20,13 +28,14 @@ def kappa_increasing_logistic(t):
     out[~pos] = np.exp(t[~pos]) / (1.0 + np.exp(t[~pos]))
     return out
 
-def make_distance_kernel_matrix(points, h=1.0, kappa="decreasing_exp", metric="euclidean"):
+def make_distance_kernel_matrix(points, h=1.0, kappa="decreasing_exp", metric="euclidean",pre_D=None):
     """
     Build hat{D}_X^kappa where (D)_{ii'} = K_h(x_i, x_{i'}) = (1/h) * kappa( d(x_i,x_{i'})/h ).
     - points: (n, d) array of coordinates in S (or arbitrary features used only for distances)
     - h: bandwidth > 0
     - kappa: str or callable
     - metric: str or callable
+    - pre_D: pre-computed distance matrix
     """
     if h <= 0:
         raise ValueError("h must be positive")
@@ -41,10 +50,15 @@ def make_distance_kernel_matrix(points, h=1.0, kappa="decreasing_exp", metric="e
         else:
             raise ValueError("Unknown kappa; provide callable or one of {'decreasing_exp','increasing_logistic'}")
 
-    D = cdist(points, points, metric=metric)
-    Dmax = float(D.max())
-    if Dmax > 0:
-        D = D / Dmax
+    if pre_D is None:
+        D = cdist(points, points, metric=metric)
+        Dmax = float(D.max())
+        if Dmax > 0:
+            D = D / Dmax
+    else:
+        Dmax = float(pre_D.max())
+        if Dmax > 0:
+            D = pre_D / Dmax
 
     Kh = (1.0 / h) * kappa_fun(D / h)
 
@@ -158,6 +172,9 @@ class ConvexFusedTransport:
         Linear minimization oracle backend.
     random_state : int or None
         For reproducibility of any randomized choices (not used by default).
+    pre_Cf : pre-computed feature cost.
+    pre_DX : pre-computed distance matrix of X.
+    pre_DY : pre-computed distance matrix of Y.
     """
     def __init__(self,
                  alpha=0.5,
@@ -168,7 +185,10 @@ class ConvexFusedTransport:
                  fw_stepsize="classic",
                  tol=1e-7,
                  lmo_method="emd",
-                 random_state=None):
+                 random_state=None,
+                 pre_Cf=None,
+                 pre_DX=None,
+                 pre_DY=None):
         self.alpha = alpha
         self.h = h
         self.kappa = kappa
@@ -178,6 +198,9 @@ class ConvexFusedTransport:
         self.tol = tol
         self.lmo_method = lmo_method
         self.random_state = random_state
+        self.pre_Cf = pre_Cf
+        self.pre_DX = pre_DX
+        self.pre_DY = pre_DY
 
         # learned attributes
         self.pi_ = None
@@ -283,25 +306,38 @@ class ConvexFusedTransport:
         Y = np.asarray(Y, dtype=float)
         nX, nY = X.shape[0], Y.shape[0]
 
-        if FX is None: FX = X
-        if FY is None: FY = Y
-        FX = np.asarray(FX, dtype=float)
-        FY = np.asarray(FY, dtype=float)
+        if self.pre_Cf is None:
+            if FX is None: FX = X
+            if FY is None: FY = Y
+            FX = np.asarray(FX, dtype=float)
+            FY = np.asarray(FY, dtype=float)
 
-        # Cost C_f for feature alignment
-        # (squared Euclidean in feature space; customize if needed)
-        C_f = cdist(FX, FY, metric='sqeuclidean')
-        Cmax = float(C_f.max())
-        if Cmax > 0:
-            C_f = C_f / Cmax
+            # Cost C_f for feature alignment
+            # (squared Euclidean in feature space; customize if needed)
+            C_f = cdist(FX, FY, metric='sqeuclidean')
+            Cmax = float(C_f.max())
+            if Cmax > 0:
+                C_f = C_f / Cmax
+        else:
+            C_f = self.pre_Cf
+            Cmax = float(C_f.max())
+            if Cmax > 0:
+                C_f = C_f / Cmax
 
         # Distance-kernel matrices hat{D}_X^κ, hat{D}_Y^κ
-        DkX = make_distance_kernel_matrix(
-            X, h=self.h, kappa=self.kappa, metric=self.metric
-        )
-        DkY = make_distance_kernel_matrix(
-            Y, h=self.h, kappa=self.kappa, metric=self.metric
-        )
+        if self.pre_DX is None:
+            DkX = make_distance_kernel_matrix(
+                X, h=self.h, kappa=self.kappa, metric=self.metric
+            )
+        else:
+            DkX = self.pre_DX
+
+        if self.pre_DY is None:
+            DkY = make_distance_kernel_matrix(
+                Y, h=self.h, kappa=self.kappa, metric=self.metric
+            )
+        else:
+            DkY = self.pre_DY
 
         # Uniform empirical marginals
         a, b = self._build_uniform_marginals(nX, nY)
