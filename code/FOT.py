@@ -28,6 +28,9 @@ def make_distance_kernel_matrix(points, h=1.0, kappa="decreasing_exp", metric="e
     - kappa: str or callable
     - metric: str or callable
     """
+    if h <= 0:
+        raise ValueError("h must be positive")
+
     if callable(kappa):
         kappa_fun = kappa
     else:
@@ -39,7 +42,9 @@ def make_distance_kernel_matrix(points, h=1.0, kappa="decreasing_exp", metric="e
             raise ValueError("Unknown kappa; provide callable or one of {'decreasing_exp','increasing_logistic'}")
 
     D = cdist(points, points, metric=metric)
-    D = D / float(D.max())
+    Dmax = float(D.max())
+    if Dmax > 0:
+        D = D / Dmax
 
     Kh = (1.0 / h) * kappa_fun(D / h)
 
@@ -49,20 +54,20 @@ def make_distance_kernel_matrix(points, h=1.0, kappa="decreasing_exp", metric="e
 # Objective & gradient
 # -------------------------------
 
-def fused_convex_objective(pi, C_f, DkX, DkY, lam):
+def fused_convex_objective(pi, C_f, DkX, DkY, alpha):
     """
-    L(pi) = <C_f, pi> + (lam / (2 nX nY)) * || nY DkX pi - nX pi DkY ||_F^2
+    L(pi) = (1 - alpha) * <C_f, pi> + (alpha / (2 nX nY)) * || nY DkX pi - nX pi DkY ||_F^2
     """
     nX, nY = pi.shape
     A = nY * DkX
     B = nX * DkY
     diff = A @ pi - pi @ B
     quad = np.sum(diff * diff)
-    return np.sum(C_f * pi) + (lam / (2.0 * nX * nY)) * quad
+    return (1 - alpha) * np.sum(C_f * pi) + (alpha / (2.0 * nX * nY)) * quad
 
-def fused_convex_gradient(pi, C_f, DkX, DkY, lam):
+def fused_convex_gradient(pi, C_f, DkX, DkY, alpha):
     """
-    ∇L(pi) = C_f + (lam / (nX nY)) * [ A^T (A pi - pi B) - (A pi - pi B) B^T ]
+    ∇L(pi) = (1-alpha) * C_f + (alpha / (nX nY)) * [ A^T (A pi - pi B) - (A pi - pi B) B^T ]
     where A = nY DkX, B = nX DkY
     """
     nX, nY = pi.shape
@@ -70,7 +75,7 @@ def fused_convex_gradient(pi, C_f, DkX, DkY, lam):
     B = nX * DkY
     Ap_minus_pB = A @ pi - pi @ B
     grad_quad = A.T @ Ap_minus_pB - Ap_minus_pB @ B.T
-    return C_f + (lam / (nX * nY)) * grad_quad
+    return (1 - alpha) * C_f + (alpha / (nX * nY)) * grad_quad
 
 # -------------------------------
 # Linear Minimization Oracle (FW step) using EMD
@@ -128,13 +133,13 @@ class ConvexFusedTransport:
     Convex Quadratic Fused Transport via Frank–Wolfe and (optional) LAP projection.
 
     Problem:
-      min_{π ∈ Pi(a,b)}  <C_f, π> + (λ/(2 nX nY)) || nY DkX π - nX π DkY ||_F^2
+      min_{π ∈ Pi(a,b)}  (1 - alpha) * <C_f, π> + (alpha / (2 nX nY)) || nY DkX π - nX π DkY ||_F^2
       where a = 1/nX, b = 1/nY (uniform empirical marginals by default).
 
     Parameters
     ----------
-    lam : float
-        Regularization λ ≥ 0.
+    alpha : float
+        Weight parameter 0 <= alpha <= 1
     h : float
         Bandwidth for distance kernel K_h.
     kappa : {"decreasing_exp","increasing_logistic"} or callable
@@ -155,7 +160,7 @@ class ConvexFusedTransport:
         For reproducibility of any randomized choices (not used by default).
     """
     def __init__(self,
-                 lam=1.0,
+                 alpha=0.5,
                  h=1.0,
                  kappa="decreasing_exp",
                  metric="euclidean",
@@ -164,7 +169,7 @@ class ConvexFusedTransport:
                  tol=1e-7,
                  lmo_method="emd",
                  random_state=None):
-        self.lam = lam
+        self.alpha = alpha
         self.h = h
         self.kappa = kappa
         self.metric = metric
@@ -189,13 +194,13 @@ class ConvexFusedTransport:
     def _exact_linesearch_gamma(self, pi, s, C_f, DkX, DkY):
         """
         Exact line-search along D = s - pi for
-          L(pi) = <C_f, pi> + (lam/(2 nX nY)) || A pi - pi B ||_F^2
+          L(pi) = (1 - alpha) * <C_f, pi> + (alpha/(2 nX nY)) || A pi - pi B ||_F^2
         with A = nY DkX, B = nX DkY.
 
         Returns gamma* in [0,1].
         """
         nX, nY = pi.shape
-        lam = float(self.lam)
+        alpha = float(self.alpha)
 
         # Direction
         D = s - pi
@@ -203,8 +208,8 @@ class ConvexFusedTransport:
         # Linear term: <C_f, D>
         lin = float(np.sum(C_f * D))
 
-        # If lam == 0, the problem is linear in pi → FW exact step is gamma=1 (since lin <= 0 by LMO).
-        if lam == 0.0:
+        # If alpha == 0, the problem is linear in pi → FW exact step is gamma=1 (since lin <= 0 by LMO).
+        if alpha == 0.0:
             return 1.0 if lin < 0.0 else 0.0
 
         # Quadratic part
@@ -218,18 +223,25 @@ class ConvexFusedTransport:
         n = float(np.sum(N * N))  # ||N||_F^2
 
         # If N == 0, quadratic term doesn't change along D → reduce to linear
-        if n <= 0.0:
-            return 1.0 if lin < 0.0 else 0.0
+        if n <= 0.0 or not np.isfinite(n):
+            # Along D, quadratic term doesn't change; reduce to linear part.
+            # If alpha==1, linear part weight is 0 → any gamma works; choose 0 for stability.
+            wlin = (1.0 - alpha) * lin
+            if (1.0 - alpha) == 0.0:
+                return 0.0
+            return 1.0 if wlin < 0.0 else 0.0
 
         mu = nX * nY
-        # phi'(gamma) = lin + (lam/mu) * ( m + gamma * n )
-        # set to zero → gamma* = - ( lin + (lam/mu)*m ) / ( (lam/mu)*n )
-        gamma_star = - (mu * lin / lam + m) / n
+        # φ'(γ) = (1-α)*lin + (α/μ)*(m + γ n) = 0
+        gamma_star = - ((1.0 - alpha) * mu * lin / alpha + m) / n
 
-        # project to [0,1]
+        # Project to [0,1] with defensive fallback
         if not np.isfinite(gamma_star):
-            # super defensive fallback
-            return 1.0 if lin < 0.0 else 0.0
+            wlin = (1.0 - alpha) * lin
+            if (1.0 - alpha) == 0.0:
+                return 0.0
+            return 1.0 if wlin < 0.0 else 0.0
+
         return float(np.clip(gamma_star, 0.0, 1.0))
 
     def _stepsize(self, t, pi, s, C_f, DkX, DkY):
@@ -279,7 +291,9 @@ class ConvexFusedTransport:
         # Cost C_f for feature alignment
         # (squared Euclidean in feature space; customize if needed)
         C_f = cdist(FX, FY, metric='sqeuclidean')
-        C_f = C_f / float(C_f.max())
+        Cmax = float(C_f.max())
+        if Cmax > 0:
+            C_f = C_f / Cmax
 
         # Distance-kernel matrices hat{D}_X^κ, hat{D}_Y^κ
         DkX = make_distance_kernel_matrix(
@@ -301,7 +315,7 @@ class ConvexFusedTransport:
         # Frank–Wolfe loop
         for t in range(1, self.fw_max_iter + 1):
             # Gradient at current pi
-            grad = fused_convex_gradient(pi, C_f, DkX, DkY, self.lam)
+            grad = fused_convex_gradient(pi, C_f, DkX, DkY, self.alpha)
 
             # Linear Minimization Oracle: s = argmin_{π∈U(a,b)} <grad, π>
             s = lmo_transport_on_polytope(grad, a, b, method=self.lmo_method)
@@ -311,7 +325,7 @@ class ConvexFusedTransport:
             self.gap_history_.append(gap)
 
             # Evaluate objective (optional per-iter)
-            obj = fused_convex_objective(pi, C_f, DkX, DkY, self.lam)
+            obj = fused_convex_objective(pi, C_f, DkX, DkY, self.alpha)
             self.obj_history_.append(obj)
 
             # Stopping criterion
@@ -335,9 +349,9 @@ class ConvexFusedTransport:
 
         self.info_ = {
             "iterations": len(self.obj_history_),
-            "final_objective": fused_convex_objective(self.pi_, C_f, DkX, DkY, self.lam),
+            "final_objective": fused_convex_objective(self.pi_, C_f, DkX, DkY, self.alpha),
             "final_gap": self.gap_history_[-1] if self.gap_history_ else None,
-            "nX": nX, "nY": nY, "lam": self.lam, "h": self.h,
+            "nX": nX, "nY": nY, "alpha": self.alpha, "h": self.h,
             "kappa": self.kappa if isinstance(self.kappa, str) else getattr(self.kappa, "__name__", "callable")
         }
         return self
