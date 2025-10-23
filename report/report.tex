@@ -254,7 +254,7 @@ The distance potential operator is a special case of a Hilbert-Schmidt operator.
 	For $0 \leq \alpha \leq 1$ and a feature function $f$, consider the optimization problem 
 	\begin{align}
 		\label{eq:proposed-method}
-		\inf_{\pi\in\Pi(\mathbb{P}_X,\mathbb{P}_Y)} (1-\alpha)\mathbb{E}_{(X,Y)\sim\pi}\big[\|f(X)-f(Y)\|_2^2\big] + \frac{\alpha}{2} \| D_X^{\kappa}T_\pi - T_\pi D_Y^{\kappa} \|_{\mathrm{HS}}^2 ,
+		\inf_{\pi\in\Pi(\mathbb{P}_X,\mathbb{P}_Y)} \underbrace{(1-\alpha)\mathbb{E}_{(X,Y)\sim\pi}\big[\|f(X)-f(Y)\|_2^2\big] + \frac{\alpha}{2} \| D_X^{\kappa}T_\pi - T_\pi D_Y^{\kappa} \|_{\mathrm{HS}}^2}_{ \eqqcolon \mathcal{L}(\pi)} ,
 	\end{align}
 	where $\|\cdot\|_{\mathrm{HS}}^2$ is a Hilbert-Schmidt norm. Then, \eqref{eq:proposed-method} is a convex problem.
 \end{theorem}
@@ -443,7 +443,7 @@ penalty might fall into suboptimal solutions due to its non-convexity.
 		%\State Initialize $\pi^{(0)} \gets \frac{1}{n_X n_Y}\mathbf{1}_{n_X}\mathbf{1}_{n_Y}^\top$
 		\State Initialize $\pi^{(0)} \gets \hat{\mathbb{P}}_X \otimes \hat{\mathbb{P}}_Y$
 		
-		\For{$t=0,...,T$}
+		\For{$t=0,...,T-1$}
 		%\State $\nabla F(\pi^{(t)}) \gets C_f + \frac{\lambda}{n_X n_Y}\!\left[A^\top(A\pi^{(t)}-\pi^{(t)}B) - (A\pi^{(t)}-\pi^{(t)}B)B^\top\right]$
 		\State Calculate the gradient $\nabla \mathcal{L}_{n_Xn_Y}(\pi^{(t)})$ in \eqref{eq:finite-proposed-method}
 		\State Take $\tilde{\pi}^{(t)} \gets \arg\min_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathrm{Tr}(\nabla \mathcal{L}_{n_Xn_Y}(\pi^{(t)})^\top \pi)$
@@ -492,9 +492,28 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 
 %%% Consistency %%%
 \paragraph{Consistency}
+\begin{assumption}[Uniqueness and local quadratic growth]
+	\label{ass:uniqueness-local-quadratic-growth}
+%	Let $\Pi(\mathbb{P}_X,\mathbb{P}_Y)$ be endowed with the $1$-Wasserstein distance
+%	$W_1$ on $\mathcal P(S\times S)$ computed with respect to the product metric
+%	$\bar d((x,y),(x',y')) := d_S(x,x') + d_S(y,y')$.
+	There exists a unique minimizer $\pi^\ast \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)$ of \eqref{eq:proposed-method}. In addition, there exist constants $c>0$ and $\delta>0$ such that
+	\begin{align*}
+		\mathcal{L}(\pi)-\mathcal{L}(\pi^\ast) \;\geq\; c\, W_1(\pi,\pi^\ast)^2 ,
+	\end{align*}
+	for all $\pi\in\Pi(\mathbb{P}_X,\mathbb{P}_Y)$ with $\mathcal{L}(\pi)\le \mathcal{L}(\pi^\ast)+\delta$.
+\end{assumption}
+
 \begin{theorem}
 	\label{thm:consistency}
-	blah...
+	Let $\hat{\pi}$ be the solution of Algorithm~\ref{alg:proposed-algorithm} with $\alpha > 0$. Suppose that \cref{ass:uniqueness-local-quadratic-growth} holds. For any $0 < \varepsilon < \sqrt{\delta/c}$, choose the maximum number of iteration $T$ as
+	\begin{align*}
+		T + 1 \geq \frac{24\alpha(\sup\kappa)^2}{c\varepsilon^2} \cdot \frac{n_{\max}^2}{n_{\min}} \cdot h^{-2} .
+	\end{align*}
+	Then,
+	\begin{align*}
+		\mathbb{P}\left(W_1(\hat{\pi},\pi^\ast) > \varepsilon \right) \leq ...
+	\end{align*}
 \end{theorem}
 
 %%% References %%%
@@ -601,17 +620,30 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 
 \subsection{Proof for \cref{thm:consistency}}\label{pf:thm:consistency}
 \begin{proof}
-	\begin{lemma}
-		\label{lem:smooth-loss}
-		For all $n_X,n_Y \geq 1$ and $\pi_1,\pi_2 \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)$,
-		\begin{align}
-			\Big\| \nabla \mathcal{L}_{n_Xn_Y}(\pi_1) - \nabla \mathcal{L}_{n_Xn_Y}(\pi_2) \Big\|_F \leq \alpha \cdot \frac{n_{\max}}{n_{\min}} \left(\|\hat{D}_X^\kappa\|_{\mathrm{op}} + \|\hat{D}_Y^\kappa\|_{\mathrm{op}}\right)^2 \|\pi_1 - \pi_2\|_F .
-		\end{align} 
-	\end{lemma}
-	\begin{proof}
-		See Appendix~\ref{pf:lem:smooth-loss}.
-	\end{proof}
-	\cref{lem:smooth-loss} guarantees the smoothness of $\mathcal{L}_{n_Xn_Y}$.
+	First, by \cref{ass:uniqueness-local-quadratic-growth},
+	\begin{align*}
+		&\mathbb{P}(W_1(\hat{\pi},\pi^\ast) > \varepsilon) \\[2pt]
+		&\leq \mathbb{P}\left(W_1(\hat{\pi},\pi^\ast) > \varepsilon ,\; \mathcal{L}(\hat{\pi}) - \mathcal{L}(\pi^\ast) \leq c\varepsilon^2\right) 
+		+ \mathbb{P}\left(\mathcal{L}(\hat{\pi}) - \mathcal{L}(\pi^\ast) > c\varepsilon^2\right) \\[2pt]
+		&= \mathbb{P}\left(\mathcal{L}(\hat{\pi}) - \mathcal{L}(\pi^\ast) > c\varepsilon^2\right) \\[2pt]
+		&\leq \mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \inf \mathcal{L}_{n_Xn_Y} \right\vert > \frac{c\varepsilon^2}{3}\right) +\;   \mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \mathcal{L}(\hat{\pi}) \right\vert > \frac{c\varepsilon^2}{3}\right) \\
+		&\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad +\; \mathbb{P}\left(\left\vert \inf \mathcal{L}_{n_Xn_Y} - \mathcal{L}(\pi^\ast) \right\vert > \frac{c\varepsilon^2}{3}\right) \\
+		&\eqqcolon E_1 + E_2 + E_3 .
+	\end{align*}
+	
+	%%% Optimization error %%%
+	We first provide the bound for $E_1$, which is the optimization error.
+%	\begin{lemma}
+%		\label{lem:smooth-loss}
+%		For all $n_X,n_Y \geq 1$ and $\pi_1,\pi_2 \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)$,
+%		\begin{align*}
+%			\Big\| \nabla \mathcal{L}_{n_Xn_Y}(\pi_1) - \nabla \mathcal{L}_{n_Xn_Y}(\pi_2) \Big\|_F \leq \alpha \cdot \frac{n_{\max}}{n_{\min}} \left(\|\hat{D}_X^\kappa\|_{\mathrm{op}} + \|\hat{D}_Y^\kappa\|_{\mathrm{op}}\right)^2 \|\pi_1 - \pi_2\|_F .
+%		\end{align*} 
+%	\end{lemma}
+%	\begin{proof}
+%		See Appendix~\ref{pf:lem:smooth-loss}.
+%	\end{proof}
+%	\cref{lem:smooth-loss} guarantees the smoothness of $\mathcal{L}_{n_Xn_Y}$.
 	
 	\begin{lemma}
 		\label{lem:FW-convergence}
@@ -627,11 +659,46 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	\begin{proof}
 		See Appendix~\ref{pf:lem:FW-convergence}.
 	\end{proof}
+	
+	The proof for \cref{lem:FW-convergence} is a standard technique to show the convergence of the FW algorithm. With this result, $E_1$ can be bounded above as follows:
+	\begin{align*}
+		\mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \inf \mathcal{L}_{n_Xn_Y} \right\vert > \frac{c\varepsilon^2}{3}\right) \leq \mathbb{P}\left(\left(\|\hat{D}_X^\kappa\|_{\mathrm{op}} + \|\hat{D}_Y^\kappa\|_{\mathrm{op}}\right)^2 > \frac{c\varepsilon^2n_{\min}(T+1)}{6\alpha}\right) .
+	\end{align*}
+	Now, considering that $\|\cdot\|_{\mathrm{op}} \leq \|\cdot\|_{\infty}$,
+	\begin{align*}
+		\|\hat{D}_X^\kappa\|_{\mathrm{op}} \leq \max_{i} \sum_{j=1}^{n_X} [\hat{D}_X^\kappa]_{ij} \leq \frac{n_X\sup\kappa}{h} , \quad \|\hat{D}_Y^\kappa\|_{\mathrm{op}} \leq \frac{n_Y\sup\kappa}{h} .
+	\end{align*}
+	This gives that
+	\begin{align*}
+		\left(\|\hat{D}_X^\kappa\|_{\mathrm{op}} + \|\hat{D}_Y^\kappa\|_{\mathrm{op}}\right)^2 \leq \frac{4n_{\max}^2(\sup\kappa)^2}{h^2} .
+	\end{align*}
+	Thus, if we choose
+	\begin{align*}
+		T + 1 \geq \frac{24\alpha(\sup\kappa)^2}{c\varepsilon^2} \cdot \frac{n_{\max}^2}{n_{\min}} \cdot h^{-2} ,
+	\end{align*}
+	we obtain $E_1 = 0$.
+	
 \end{proof}
 
-\subsection{Proof for \cref{lem:smooth-loss}}\label{pf:lem:smooth-loss}
+%\subsection{Proof for \cref{lem:smooth-loss}}\label{pf:lem:smooth-loss}
+%\begin{proof}
+%	For brevity, denote $A \coloneqq n_Y \hat{D}_X^\kappa$ and $B \coloneqq n_X \hat{D}_Y^\kappa$. Observe that $A$ and $B$ are symmetric. Hence, the gradient of $\nabla \mathcal{L}_{n_Xn_Y}(\pi)$ can be calculated as
+%	\begin{align*}
+%		\alpha^{-1}(n_Xn_Y)\nabla \mathcal{L}_{n_Xn_Y}(\pi) = A^2\pi + \pi B^2 - 2A \pi B + \mathrm{const.} ,
+%	\end{align*}
+%	where the constant does not depend on $\pi$. Thus, the triangle inequality and the Cauchy-Schwarz inequality yield that
+%	\begin{align*}
+%		\alpha^{-1}(n_Xn_Y) \Big\| \nabla \mathcal{L}_{n_Xn_Y}(\pi_1) - \nabla \mathcal{L}_{n_Xn_Y}(\pi_2) \Big\|_F &\leq \left(\|A\|_{\mathrm{op}} + \|B\|_{\mathrm{op}}\right)^2\| \pi_1 - \pi_2 \|_F \\
+%		&\leq \left(n_Y\|\hat{D}_X^\kappa\|_{\mathrm{op}} + n_X\|\hat{D}_Y^\kappa\|_{\mathrm{op}}\right)^2\| \pi_1 - \pi_2 \|_F \\
+%		&\leq n_{\max}^2 \left(\|\hat{D}_X^\kappa\|_{\mathrm{op}} + \|\hat{D}_Y^\kappa\|_{\mathrm{op}}\right)^2\| \pi_1 - \pi_2 \|_F .
+%	\end{align*}
+%	This completes the proof.
+%\end{proof}
+
+\subsection{Proof for \cref{lem:FW-convergence}}\label{pf:lem:FW-convergence}
 \begin{proof}
-	For brevity, denote $A \coloneqq n_Y \hat{D}_X^\kappa$ and $B \coloneqq n_X \hat{D}_Y^\kappa$. Observe that $A$ and $B$ are symmetric. Hence, the gradient of $\nabla \mathcal{L}_{n_Xn_Y}(\pi)$ can be calculated as
+	%%% beta-smoothness %%%
+	First, we obtain the smoothness of $\mathcal{L}_{n_Xn_Y}$. For brevity, denote $A \coloneqq n_Y \hat{D}_X^\kappa$ and $B \coloneqq n_X \hat{D}_Y^\kappa$. Observe that $A$ and $B$ are symmetric. Hence, the gradient of $\nabla \mathcal{L}_{n_Xn_Y}(\pi)$ can be calculated as
 	\begin{align*}
 		\alpha^{-1}(n_Xn_Y)\nabla \mathcal{L}_{n_Xn_Y}(\pi) = A^2\pi + \pi B^2 - 2A \pi B + \mathrm{const.} ,
 	\end{align*}
@@ -641,23 +708,25 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 		&\leq \left(n_Y\|\hat{D}_X^\kappa\|_{\mathrm{op}} + n_X\|\hat{D}_Y^\kappa\|_{\mathrm{op}}\right)^2\| \pi_1 - \pi_2 \|_F \\
 		&\leq n_{\max}^2 \left(\|\hat{D}_X^\kappa\|_{\mathrm{op}} + \|\hat{D}_Y^\kappa\|_{\mathrm{op}}\right)^2\| \pi_1 - \pi_2 \|_F .
 	\end{align*}
-	This completes the proof.
-\end{proof}
-
-\subsection{Proof for \cref{lem:FW-convergence}}\label{pf:lem:FW-convergence}
-\begin{proof}
-	This is a standard proof to show the convergence of the FW algorithm. Let 
+	Thus, we get
+	\begin{align}
+		\label{eq:beta-smooth}
+		\Big\| \nabla \mathcal{L}_{n_Xn_Y}(\pi_1) - \nabla \mathcal{L}_{n_Xn_Y}(\pi_2) \Big\|_F \leq \alpha \cdot \frac{n_{\max}}{n_{\min}} \left(\|\hat{D}_X^\kappa\|_{\mathrm{op}} + \|\hat{D}_Y^\kappa\|_{\mathrm{op}}\right)^2 \|\pi_1 - \pi_2\|_F .
+	\end{align} 
+	
+	%%% Convergence %%%
+	What remains is to show the convergence of the FW algorithm. Define
 	\begin{align*}
 		\beta \coloneqq \alpha \cdot \frac{n_{\max}}{n_{\min}} \left(\|\hat{D}_X^\kappa\|_{\mathrm{op}} + \|\hat{D}_Y^\kappa\|_{\mathrm{op}}\right)^2 .
 	\end{align*}
-	Let $\pi^\ast \in \argmin_{\pi} \mathcal{L}_{n_Xn_Y}(\pi)$, whose existence is guaranteed by the convexity. Then,
+	Let $\pi_n^\ast \in \argmin_{\pi} \mathcal{L}_{n_Xn_Y}(\pi)$, whose existence is guaranteed by the convexity. Then,
 	\begin{align*}
 		\mathcal{L}_{n_Xn_Y}(\pi^{(t+1)}) - \mathcal{L}_{n_Xn_Y}(\pi^{(t)}) &\leq \mathrm{Tr}\left(\nabla \mathcal{L}_{n_Xn_Y}(\pi^{(t)})^\top (\pi^{(t+1)} - \pi^{(t)})\right) + \frac{\beta}{2} \|\pi^{(t+1)} - \pi^{(t)} \|_F^2 \\
 		&= \gamma_t\mathrm{Tr}\left(\nabla \mathcal{L}_{n_Xn_Y}(\pi^{(t)})^\top (\tilde{\pi}^{(t)} - \pi^{(t)})\right) + \frac{\beta}{2} \|\pi^{(t+1)} - \pi^{(t)} \|_F^2 \\
-		&\leq \gamma_t \mathrm{Tr}\left(\nabla \mathcal{L}_{n_Xn_Y}(\pi^{(t)})^\top (\pi^\ast - \pi^{(t)})\right) + \frac{\beta}{2} \|\pi^{(t+1)} - \pi^{(t)} \|_F^2 \\
+		&\leq \gamma_t \mathrm{Tr}\left(\nabla \mathcal{L}_{n_Xn_Y}(\pi^{(t)})^\top (\pi_n^\ast - \pi^{(t)})\right) + \frac{\beta}{2} \|\pi^{(t+1)} - \pi^{(t)} \|_F^2 \\
 		&\leq \gamma_t \left(\inf\mathcal{L}_{n_Xn_Y} - \mathcal{L}_{n_Xn_Y}(\pi^{(t)})\right) + \frac{\beta}{2} \|\pi^{(t+1)} - \pi^{(t)} \|_F^2 .
 	\end{align*}
-	The first inequality comes from \cref{lem:smooth-loss}; the third inequality is due to the definition of $\tilde{\pi}^{(t)}$; and the last inequality is from the convexity of $\mathcal{L}_{n_Xn_Y}$. 
+	The first inequality comes from \eqref{eq:beta-smooth}; the third inequality is due to the definition of $\tilde{\pi}^{(t)}$; and the last inequality is from the convexity of $\mathcal{L}_{n_Xn_Y}$. 
 	
 	Considering that
 	\begin{align*}
