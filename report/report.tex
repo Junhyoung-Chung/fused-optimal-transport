@@ -59,6 +59,11 @@
 \usepackage{cleveref}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{tikz}
+\usepackage{xcolor}
+\usetikzlibrary{calc}
 
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}{Lemma} 
@@ -214,11 +219,11 @@ The existence follows from standard weak compactness of the set of couplings $\P
 		K_h(x,x^\prime) = \frac{1}{h}\kappa\left(\frac{d_S(x,x^\prime)}{h}\right) .
 	\end{align*}
 \end{definition}
-We only require $\kappa$ to be \emph{strictly monotone}, which means it may be either strictly decreasing or strictly increasing. 
-This assumption guarantees injectivity of the mapping $r \mapsto \kappa(r/h)$, so that equal kernel values correspond exactly to equal underlying distances; that is, $K_h(x,x') = K_h(T(x),T(x)')$ if and only if $d_S(x,x') = d_S(T(x),T(x'))$. 
-The direction of monotonicity determines the geometric emphasis of the regularization term. 
-When $\kappa$ is strictly decreasing (for example, $\kappa(t) = e^{-t}$ or $(1+t)^{-p}$), the kernel assigns larger weights to nearby pairs, thus promoting preservation of local geometric structures. 
-Conversely, when $\kappa$ is strictly increasing but bounded (for example, $\kappa(t)=\exp(t)/(1+\exp(t))$), it emphasizes distant pairs, discouraging global contraction and encouraging large-scale geometric alignment. 
+%We only require $\kappa$ to be strictly monotone, which means it may be either strictly decreasing or strictly increasing. 
+%This assumption guarantees injectivity of the mapping $r \mapsto \kappa(r/h)$, so that equal kernel values correspond exactly to equal underlying distances; that is, $K_h(x,x') = K_h(T(x),T(x)')$ if and only if $d_S(x,x') = d_S(T(x),T(x'))$. 
+The direction of monotonicity of $\kappa$ determines the geometric emphasis of the regularization term. 
+When $\kappa$ is decreasing (for example, $\kappa(t) = e^{-t}$ or $(1+t)^{-p}$), the kernel assigns larger weights to nearby pairs, thus promoting preservation of local geometric structures. 
+Conversely, when $\kappa$ is increasing but bounded (for example, $\kappa(t)=\exp(t)/(1+\exp(t))$), it emphasizes distant pairs, discouraging global contraction and encouraging large-scale geometric alignment. 
 In both cases, the bandwidth $h$ controls the spatial scale of this emphasis—small $h$ focuses on fine local structures, while large $h$ smooths over broader spatial relationships. 
 Finally, the boundedness of $\kappa$ ensures that $K_h$ is bounded and that the operator $D_X^{\kappa}$ is Hilbert--Schmidt; importantly, the convexity result in Theorem~\ref{thm:convex-relaxation} holds regardless of the monotonicity direction, which will be discussed later.
 
@@ -273,9 +278,9 @@ The distance potential operator is a special case of a Hilbert-Schmidt operator.
 	\label{prop:solution}
 	Let $T: S \to S$ be an injective measurable map, and consider $\pi = (\mathrm{Id},T)_{\#}\mathbb{P}_X$. Then,
 	\begin{align*}
-		\|D_X^{\kappa}T_{\pi} - T_{\pi}D_Y^{\kappa}\|_{\mathrm{HS}}^2 = 0 \;\iff\;d_S(T(x),T(x^\prime)) = d_S(x,x^\prime) ,\;\; \text{for $\mathbb{P}_X \otimes \mathbb{P}_X$-a.e. $(x,x^\prime)$} .
+		\|D_X^{\kappa}T_{\pi} - T_{\pi}D_Y^{\kappa}\|_{\mathrm{HS}}^2 = 0 \;\Longleftarrow\;d_S(T(x),T(x^\prime)) = d_S(x,x^\prime) ,\;\; \text{for $\mathbb{P}_X \otimes \mathbb{P}_X$-a.e. $(x,x^\prime)$} .
 	\end{align*}
-	Moreover, if in addition $T$ is continuous and $\mathrm{supp}(\mathbb{P}_X) = S$, then the identity $d_S(T(x),T(x'))=d_S(x,x')$ holds for all $x,x'\in S$, hence $T$ is an isometry on $S$.
+	The converse holds if $\kappa$ is further assumed to be strictly monotone. Moreover, if in addition $T$ is continuous and $\mathrm{supp}(\mathbb{P}_X) = S$, then the identity $d_S(T(x),T(x'))=d_S(x,x')$ holds for all $x,x'\in S$, hence $T$ is an isometry on $S$.
 \end{proposition}
 \begin{proof}
 	See Appendix~\ref{pf:prop:solution}.
@@ -284,6 +289,142 @@ The distance potential operator is a special case of a Hilbert-Schmidt operator.
 
 %%% Non-uniqueness %%%
 Indeed, this also reveals that the objective \eqref{eq:proposed-method} is generally not strictly convex; for instance, if multiple distinct isometries exist and they produce the same feature-matching cost, they will all be global minimizers.
+
+\paragraph{Motivation.}  
+We provide a motivation for comparing our convex surrogate with the Gromov--Wasserstein penalty.  
+Setting $\kappa(x) = x$, consider the following $3 \times 3$ matching problem:
+\begin{align*}
+	D_X = \begin{pmatrix}
+		0 & x_{12} & x_{13} \\
+		x_{12} & 0 & x_{23} \\
+		x_{13} & x_{23} & 0
+	\end{pmatrix} , 
+	\quad
+	D_Y = \begin{pmatrix}
+		0 & y_{12} & y_{13} \\
+		y_{12} & 0 & y_{23} \\
+		y_{13} & y_{23} & 0
+	\end{pmatrix} .
+\end{align*}
+For clarity, we consider the trajectory $3\pi(t) = tI + (1-t)P$ over $0 \leq t \leq 1$,  
+where $P$ is the permutation matrix obtained by switching the second and third rows of the identity matrix, that is,
+\begin{align*}
+	I = \begin{pmatrix}
+		1 & 0 & 0 \\
+		0 & 1 & 0 \\
+		0 & 0 & 1
+	\end{pmatrix} , \quad
+	P = \begin{pmatrix}
+		1 & 0 & 0 \\
+		0 & 0 & 1 \\
+		0 & 1 & 0
+	\end{pmatrix} , \quad
+	\pi(t) = \frac{1}{3} \left(tI + (1-t)P\right) , \quad 0 \leq t \leq 1 . 
+\end{align*} 
+A straightforward calculation yields
+\begin{align*}
+	\|D_XT_{\pi(t)} - T_{\pi(t)}D_Y \|_{\mathrm{HS}}^2 = \| D_X\pi(t) - \pi(t)D_Y \|_F^2 = \frac{1}{9}(at^2 + bt + c) ,
+\end{align*}
+where
+\begin{align*}
+	&A = 2\left[(x_{12} - y_{12})^2 + (x_{13} - y_{13})^2 + (x_{23} - y_{23})^2\right] , \\
+	&B = 2\left[(x_{13} - y_{12})^2 + (x_{12} - y_{13})^2 + (x_{23} - y_{23})^2\right] , \\
+	&C = (x_{12} + x_{13} - y_{12} - y_{13})^2 , \\[5pt]
+	&a = A + B - 2C , \quad b = -2B + 2C , \quad c = B .
+\end{align*}
+Thus, when $a \neq 0$, the unique minimizer $t_{\mathrm{CS}}^\ast$ is given by 
+\begin{align*}
+	t_{\mathrm{CS}}^\ast = \frac{B - C}{(A - C) + (B - C)} .
+\end{align*}
+Similarly, we can readily derive
+\begin{align*}
+	\mathbb{E}_{\substack{(X,Y)\sim\pi\\(X^\prime,Y^\prime)\sim\pi}}
+	\Big[\big|d_S(X,X^\prime)-d_S(Y,Y^\prime)\big|^2\Big] = \mathrm{const.} - \frac{2}{3}\mathrm{Tr}(D_X \pi(t) D_Y \pi(t)^\top) ,
+\end{align*}
+and
+\begin{align*}
+	&\mathrm{Tr}(D_X \pi(t) D_Y \pi(t)^\top) = D t^2 + E (1 - t)^2 + Ft(1-t) , \\[5pt]
+	&D = 2(x_{12}y_{12} + x_{13}y_{13} + x_{23}y_{23}) , \\
+	&E = 2(x_{13}y_{12} + x_{12}y_{13} + x_{23}y_{23}) , \\
+	&F = 2(x_{12}+x_{13})(y_{12} + y_{13}) .
+\end{align*}
+Since the second derivative of the above expression is positive (equal to $8x_{23}y_{23} > 0$),  
+the GW penalty is concave in $t$.  
+Comparing the two endpoints, the minimizer $t_{\mathrm{GW}}^\ast$ can be expressed as
+\begin{align*}
+	t_{\mathrm{GW}}^\ast = \begin{cases}
+		%		0 & (x_{12} - y_{12})^2 + (x_{13} - y_{13})^2 \geq (x_{12} - y_{13})^2 + (x_{13} - y_{12})^2 , \\
+		%		1 & (x_{12} - y_{12})^2 + (x_{13} - y_{13})^2 \leq (x_{12} - y_{13})^2 + (x_{13} - y_{12})^2 . 
+		0 & A \geq B , \\
+		1 & A \leq B .
+	\end{cases}
+\end{align*}
+
+%%% When A >> B %%%
+\begin{figure}[t]
+	\centering
+%	\begin{subfigure}[t]{0.33\textwidth}
+%		\centering
+%		\begin{tikzpicture}[scale=0.8, baseline=(current bounding box.north)]
+%				\path[use as bounding box] (1.5,3.5) rectangle (10.8,9.2);
+%				
+%				% X set
+%				\coordinate (X1) at (4,8);
+%				\coordinate (X2) at (2,4);
+%				\coordinate (X3) at (5,6);
+%				
+%				% Y set
+%				\coordinate (Y1) at (8,8);
+%				\coordinate (Y2) at (9,6 - 0.7);
+%				\coordinate (Y3) at (6,4);
+%				
+%				% Edges 
+%				\foreach \i/\j in {1/2,2/3,1/3}{
+%						\draw[black, thin] (X\i)--(X\j);
+%						\draw[black, thin] (Y\i)--(Y\j); 
+%					}
+%				
+%				% Points + Labels
+%				\fill (X1) circle(1.5pt) node[above right] {$X_{1}$}; 
+%				\fill (Y1) circle(1.5pt) node[above right] {$Y_{1}$}; 
+%				
+%				\fill (X2) circle(1.5pt) node[below left] {$X_{2}$}; 
+%				\fill (Y2) circle(1.5pt) node[above right] {$Y_{2}$}; 
+%				
+%				\fill (X3) circle(1.5pt) node[above right] {$X_{3}$}; 
+%				\fill (Y3) circle(1.5pt) node[below left] {$Y_{3}$}; 
+%				
+%				% Edge labels
+%				\node at ($(X1)!0.5!(X2)+(-0.1,0.6)$) {$x_{12}$};
+%				\node at ($(X2)!0.5!(X3)+(0.7,-0.1)$) {$x_{23}$};
+%				\node at ($(X1)!0.5!(X3)+(0.4,0.1)$) {$x_{13}$};
+%				
+%				\node at ($(Y1)!0.5!(Y2)+(0.4,0.1)$) {$y_{12}$}; 
+%				\node at ($(Y2)!0.5!(Y3)+(0.7,-0.1)$) {$y_{23}$};
+%				\node at ($(Y1)!0.5!(Y3)+(-0.1,0.6)$) {$y_{13}$};
+%			\end{tikzpicture}
+%		\caption{Geometry}
+%	\end{subfigure}
+	\begin{subfigure}[t]{0.49\textwidth}
+		\includegraphics[width=\textwidth]{../simulation/motivating_geometry.png}
+		\caption{Geometric structure of source and target samples}
+		\label{fig:motivating-geometry}
+	\end{subfigure}
+	\begin{subfigure}[t]{0.49\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{../simulation/convex_vs_gw.png}
+		\caption{Proposed convex surrogate and GW penalty}
+		\label{fig:motivating-penalty-trajectory}
+	\end{subfigure}
+	\caption{Comparison of the geometric structures and associated penalty functions}
+	\label{fig:motivating-example}
+\end{figure}
+%%% Figure explanation: A >> B %%%
+Figure~\ref{fig:motivating-example} visualizes the case when $A \gg B \approx 0$. While both penalties encourage small values of $t$, the proposed convex surrogate attains its minimum near zero, whereas the GW penalty reaches its minimum exactly at $t = 0$. Nevertheless, due to its concave shape, the GW objective may converge to the opposite extreme ($t = 1$) depending on the initialization.
+
+%%% Conclusion %%%
+Overall, this example highlights the difference between the proposed convex surrogate and the GW penalty. While the GW objective exhibits a concave behavior that often results in extreme solutions (corresponding to permutation-like transport plans), our convex surrogate yields a smooth and well-behaved solution. In particular, the minimizer $t_{\mathrm{CS}}^\ast$ varies continuously with the geometric discrepancy, while ensuring the convexity. This property ensures numerical stability and uniqueness of the solution, making the convex surrogate more suitable for optimization and statistical analysis, especially in complex settings where the GW 
+penalty may fall into suboptimal solutions due to its non-convexity.
 
 \section{Algorithm}
 Suppose that we have $(X_i,f(X_i))$ for $i=1,...,n_X$ as source data and $(Y_j,f(Y_j))$ for $j=1,...,n_Y$ as target data. Denote $\hat{\mathbb{P}}_X$ and $\hat{\mathbb{P}}_Y$ by the empirical distributions of $X$ and $Y$, respectively. Then, the empirical version of \eqref{eq:proposed-method} corresponds to
@@ -294,7 +435,7 @@ Suppose that we have $(X_i,f(X_i))$ for $i=1,...,n_X$ as source data and $(Y_j,f
 In fact, the above problem can be written as a convex quadratic program (and reduces to a linear program when $\alpha = 0$):
 \begin{align}
 	\label{eq:finite-proposed-method}
-	\min_{\pi}\; &\underbrace{\alpha\mathrm{Tr}\left(C_f^\top \pi\right) + \frac{1-\alpha}{2n_Xn_Y} \left\| n_Y \hat{D}^{\kappa}_X \pi - n_X \pi \hat{D}^{\kappa}_Y \right\|_F^2}_{\eqqcolon \mathcal{L}(\pi)} \nonumber\\
+	\min_{\pi}\; &\underbrace{(1-\alpha)\mathrm{Tr}\left(C_f^\top \pi\right) + \frac{\alpha}{2n_Xn_Y} \left\| n_Y \hat{D}^{\kappa}_X \pi - n_X \pi \hat{D}^{\kappa}_Y \right\|_F^2}_{\eqqcolon \mathcal{L}(\pi)} \nonumber\\
 	\mathrm{s.t.}&\quad \pi\mathbf{1}_{n_Y} = \frac{1}{n_X} \mathbf{1}_{n_X} , \quad \pi^\top \mathbf{1}_{n_X} = \frac{1}{n_Y} \mathbf{1}_{n_Y} , \quad \pi \geq 0 ,
 \end{align}
 where $\pi \in \mathbb{R}_{+}^{n_X \times n_Y}$, $(C_f)_{ij} = \|f(X_i) - f(Y_j)\|_2^2$, $(\hat{D}^{\kappa}_X)_{ii^\prime} = K_h(X_i,X_{i^\prime})$, and $(\hat{D}^{\kappa}_Y)_{jj^\prime} = K_h(Y_j,Y_{j^\prime})$.
@@ -434,10 +575,10 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 		\Gamma_\pi\bigl(x,T(x')\bigr)
 		= \frac{1}{h}\left[\kappa\left(\frac{d_S\bigl(x,x^\prime\bigr)}{h}\right) - \kappa\left(\frac{d_S\bigl(T(x),T(x^\prime)\bigr)}{h}\right)\right] .
 	\end{align*}
-		
-	($\Rightarrow$) Suppose that $\|D_X^{\kappa}T_\pi - T_\pi D_Y^{\kappa}\|_{\mathrm{HS}}^2 = 0$. Then $\Gamma_\pi = 0$ holds for $\pi$-almost every $(x,y)$, and in particular, for pairs $(x,T(x'))$ with respect to $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x')$. By the strict monotone property of $\kappa$, $d_S(T(x),T(x^\prime)) = d_S(x,x^\prime)$ holds for $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x^\prime)$.
 	
-	($\Leftarrow$) Conversely, if $d_S(T(x),T(x')) = d_S(x,x')$ holds for $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x')$, substituting this into the above expression yields $\Gamma_\pi(x,T(x')) = 0$ for $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x')$. Consequently, $\Gamma_\pi = 0$ holds for $\pi$-almost every $(x,y)$, which implies that the Hilbert–Schmidt norm is zero.
+	($\Leftarrow$) If $d_S(T(x),T(x')) = d_S(x,x')$ holds for $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x')$, substituting this into the above expression yields $\Gamma_\pi(x,T(x')) = 0$ for $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x')$. Consequently, $\Gamma_\pi = 0$ holds for $\pi$-almost every $(x,y)$, which implies that the Hilbert–Schmidt norm is zero.
+	
+	($\Rightarrow$) Now, assume that $\kappa$ is strictly monotone. If $\|D_X^{\kappa}T_\pi - T_\pi D_Y^{\kappa}\|_{\mathrm{HS}}^2 = 0$, then $\Gamma_\pi = 0$ holds for $\pi$-almost every $(x,y)$, and in particular, for pairs $(x,T(x'))$ with respect to $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x')$. By the strict monotone property of $\kappa$, $d_S(T(x),T(x^\prime)) = d_S(x,x^\prime)$ holds for $\mathbb{P}_X \otimes \mathbb{P}_X$-almost every $(x,x^\prime)$.
 	
 	Finally, if $T$ is continuous and $\mathrm{supp}(\mathbb{P}_X) = S$, then the function
 	\begin{align*}
