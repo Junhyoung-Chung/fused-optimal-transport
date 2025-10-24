@@ -492,11 +492,23 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 
 %%% Consistency %%%
 \paragraph{Consistency}
+\begin{theorem}
+	\label{thm:consistency}
+	Let $\hat{\pi}$ be the solution of Algorithm~\ref{alg:proposed-algorithm} with $\alpha > 0$. For any $\varepsilon > 0$, choose the maximum number of iteration $T$ as
+	\begin{align*}
+		T + 1 \geq \frac{24\alpha(\sup\kappa)^2}{\varepsilon h^2} \cdot \frac{n_{\max}^2}{n_{\min}} .
+	\end{align*}
+	Then,
+	\begin{align*}
+		\mathbb{P}\left(\mathcal{L}(\hat{\pi}) - \inf \mathcal{L} > \varepsilon \right) \leq ...
+	\end{align*}
+\end{theorem}
+
 \begin{assumption}[Uniqueness and local quadratic growth]
 	\label{ass:uniqueness-local-quadratic-growth}
-%	Let $\Pi(\mathbb{P}_X,\mathbb{P}_Y)$ be endowed with the $1$-Wasserstein distance
-%	$W_1$ on $\mathcal P(S\times S)$ computed with respect to the product metric
-%	$\bar d((x,y),(x',y')) := d_S(x,x') + d_S(y,y')$.
+	%	Let $\Pi(\mathbb{P}_X,\mathbb{P}_Y)$ be endowed with the $1$-Wasserstein distance
+	%	$W_1$ on $\mathcal P(S\times S)$ computed with respect to the product metric
+	%	$\bar d((x,y),(x',y')) := d_S(x,x') + d_S(y,y')$.
 	There exists a unique minimizer $\pi^\ast \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)$ of \eqref{eq:proposed-method}. In addition, there exist constants $c>0$ and $\delta>0$ such that
 	\begin{align*}
 		\mathcal{L}(\pi)-\mathcal{L}(\pi^\ast) \;\geq\; c\, W_1(\pi,\pi^\ast)^2 ,
@@ -504,17 +516,16 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	for all $\pi\in\Pi(\mathbb{P}_X,\mathbb{P}_Y)$ with $\mathcal{L}(\pi)\le \mathcal{L}(\pi^\ast)+\delta$.
 \end{assumption}
 
-\begin{theorem}
-	\label{thm:consistency}
+\begin{corollary}
 	Let $\hat{\pi}$ be the solution of Algorithm~\ref{alg:proposed-algorithm} with $\alpha > 0$. Suppose that \cref{ass:uniqueness-local-quadratic-growth} holds. For any $0 < \varepsilon < \sqrt{\delta/c}$, choose the maximum number of iteration $T$ as
 	\begin{align*}
-		T + 1 \geq \frac{24\alpha(\sup\kappa)^2}{c\varepsilon^2} \cdot \frac{n_{\max}^2}{n_{\min}} \cdot h^{-2} .
+		T + 1 \geq \frac{24\alpha(\sup\kappa)^2}{c\varepsilon^2 h^2} \cdot \frac{n_{\max}^2}{n_{\min}} .
 	\end{align*}
 	Then,
 	\begin{align*}
 		\mathbb{P}\left(W_1(\hat{\pi},\pi^\ast) > \varepsilon \right) \leq ...
 	\end{align*}
-\end{theorem}
+\end{corollary}
 
 %%% References %%%
 \bibliographystyle{abbrvnat}
@@ -620,14 +631,20 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 
 \subsection{Proof for \cref{thm:consistency}}\label{pf:thm:consistency}
 \begin{proof}
-	First, by \cref{ass:uniqueness-local-quadratic-growth},
+	First, note that
+%	\begin{align*}
+%		&\mathbb{P}(W_1(\hat{\pi},\pi^\ast) > \varepsilon) \\[2pt]
+%		&\leq \mathbb{P}\left(W_1(\hat{\pi},\pi^\ast) > \varepsilon ,\; \mathcal{L}(\hat{\pi}) - \mathcal{L}(\pi^\ast) \leq c\varepsilon^2\right) 
+%		+ \mathbb{P}\left(\mathcal{L}(\hat{\pi}) - \mathcal{L}(\pi^\ast) > c\varepsilon^2\right) \\[2pt]
+%		&= \mathbb{P}\left(\mathcal{L}(\hat{\pi}) - \mathcal{L}(\pi^\ast) > c\varepsilon^2\right) \\[2pt]
+%		&\leq \mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \inf \mathcal{L}_{n_Xn_Y} \right\vert > \frac{c\varepsilon^2}{3}\right) +\;   \mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \mathcal{L}(\hat{\pi}) \right\vert > \frac{c\varepsilon^2}{3}\right) \\
+%		&\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad +\; \mathbb{P}\left(\left\vert \inf \mathcal{L}_{n_Xn_Y} - \mathcal{L}(\pi^\ast) \right\vert > \frac{c\varepsilon^2}{3}\right) \\
+%		&\eqqcolon E_1 + E_2 + E_3 .
+%	\end{align*}
 	\begin{align*}
-		&\mathbb{P}(W_1(\hat{\pi},\pi^\ast) > \varepsilon) \\[2pt]
-		&\leq \mathbb{P}\left(W_1(\hat{\pi},\pi^\ast) > \varepsilon ,\; \mathcal{L}(\hat{\pi}) - \mathcal{L}(\pi^\ast) \leq c\varepsilon^2\right) 
-		+ \mathbb{P}\left(\mathcal{L}(\hat{\pi}) - \mathcal{L}(\pi^\ast) > c\varepsilon^2\right) \\[2pt]
-		&= \mathbb{P}\left(\mathcal{L}(\hat{\pi}) - \mathcal{L}(\pi^\ast) > c\varepsilon^2\right) \\[2pt]
-		&\leq \mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \inf \mathcal{L}_{n_Xn_Y} \right\vert > \frac{c\varepsilon^2}{3}\right) +\;   \mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \mathcal{L}(\hat{\pi}) \right\vert > \frac{c\varepsilon^2}{3}\right) \\
-		&\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad +\; \mathbb{P}\left(\left\vert \inf \mathcal{L}_{n_Xn_Y} - \mathcal{L}(\pi^\ast) \right\vert > \frac{c\varepsilon^2}{3}\right) \\
+		&\mathbb{P}\left(\mathcal{L}(\hat{\pi}) - \inf \mathcal{L} > \varepsilon\right) \\[2pt]
+		&\leq \mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \inf \mathcal{L}_{n_Xn_Y} \right\vert > \frac{\varepsilon}{3}\right) +\;   \mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \mathcal{L}(\hat{\pi}) \right\vert > \frac{\varepsilon}{3}\right) \\
+		&\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad +\; \mathbb{P}\left(\left\vert \inf \mathcal{L}_{n_Xn_Y} - \inf \mathcal{L} \right\vert > \frac{\varepsilon}{3}\right) \\
 		&\eqqcolon E_1 + E_2 + E_3 .
 	\end{align*}
 	
@@ -662,7 +679,7 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	
 	The proof for \cref{lem:FW-convergence} is a standard technique to show the convergence of the FW algorithm. With this result, $E_1$ can be bounded above as follows:
 	\begin{align*}
-		\mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \inf \mathcal{L}_{n_Xn_Y} \right\vert > \frac{c\varepsilon^2}{3}\right) \leq \mathbb{P}\left(\left(\|\hat{D}_X^\kappa\|_{\mathrm{op}} + \|\hat{D}_Y^\kappa\|_{\mathrm{op}}\right)^2 > \frac{c\varepsilon^2n_{\min}(T+1)}{6\alpha}\right) .
+		\mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \inf \mathcal{L}_{n_Xn_Y} \right\vert > \frac{\varepsilon}{3}\right) \leq \mathbb{P}\left(\left(\|\hat{D}_X^\kappa\|_{\mathrm{op}} + \|\hat{D}_Y^\kappa\|_{\mathrm{op}}\right)^2 > \frac{\varepsilon n_{\min}(T+1)}{6\alpha}\right) .
 	\end{align*}
 	Now, considering that $\|\cdot\|_{\mathrm{op}} \leq \|\cdot\|_{\infty}$,
 	\begin{align*}
@@ -674,7 +691,7 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	\end{align*}
 	Thus, if we choose
 	\begin{align*}
-		T + 1 \geq \frac{24\alpha(\sup\kappa)^2}{c\varepsilon^2} \cdot \frac{n_{\max}^2}{n_{\min}} \cdot h^{-2} ,
+		T + 1 \geq \frac{24\alpha(\sup\kappa)^2}{\varepsilon h^2} \cdot \frac{n_{\max}^2}{n_{\min}} ,
 	\end{align*}
 	we obtain $E_1 = 0$.
 	
