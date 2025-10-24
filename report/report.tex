@@ -183,9 +183,9 @@ To address this, we consider a \emph{fused optimal transport} (FOT) formulation,
 \paragraph{Notations.}
 Let $(\Omega,\mathcal{F},\mathbb{P})$ be a probability space and $(S,d_S)$ be a compact metric space. 
 A measurable map $X:\Omega\to S$ is called a random element with distribution $\mathbb{P}_X\coloneqq\mathbb{P}\circ X^{-1}$. Denote $L^2(S,\mathbb{P}_X)$ by the Hilbert space of real-valued, square integrable functions on $S$ with respect to $\mathbb{P}_X$.
-We also introduce a feature space $M\subset\mathbb{R}^d$ which is compact, and call any one-to-one and continuous $f:S\to M$ a feature function. Throughout this study, we assume that $\mathrm{diam}(S) = \mathrm{diam}(M) = 1$, where $\mathrm{diam}(A) \coloneqq \sup_{x,x^\prime \in A}d_A(x,x^\prime)$. For two probability measures $\mu,\nu$ on $S$, denote by
+We also introduce a feature space $M\subset\mathbb{R}^d$ which is compact, and call any one-to-one and continuous $f:S\to M$ a feature function. Throughout this study, we assume that $\mathrm{diam}(S) = \mathrm{diam}(M) = 1$, where $\mathrm{diam}(A) \coloneqq \sup_{x,x^\prime \in A}d_A(x,x^\prime)$. For probability measures $\mu_1,...,\mu_m$ on $S$, denote by
 \begin{align*}
-	\Pi(\mu,\nu) \coloneqq \{\pi\ \text{on }S\times S:\ \text{the marginals are $\mu$ and $\nu$}\}
+	\Pi(\mu_1,...,\mu_m) \coloneqq \{\pi\ \text{on } S^m :\ \text{the marginals are $\mu_1,...,\mu_m$}\}
 \end{align*}
 the set of all couplings between $\mu$ and $\nu$. Given an arbitrary coupling $\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)$, the conditional expectation operator $T_{\pi}: L^2(S,\mathbb{P}_Y) \to L^2(S,\mathbb{P}_X)$ is defined as $(T_{\pi}g)(x) \coloneqq \mathbb{E}[g(Y) \mid X = x]$ for any $g \in L^2(S,\mathbb{P}_Y)$. Lastly, we say a measurable map $T: S \to S$ pushes forward $\mu$ to $\nu$ if $\mu(T^{-1}(A)) = \nu(A)$ for all $A \in \mathcal{B}(S)$, where $\mathcal{B}(S)$ is the Borel $\sigma$-algebra of $S$. We denote $T_{\#}\mu = \nu$ if $T$ pushes forward $\mu$ to $\nu$.
 %By the disintegration theorem, for $\pi \in \Pi(\mu,\nu)$ there exists a Markov kernel $k(,\cdot,\cdot): \mathcal{B}(S) \times S \to [0,1]$ such that $\pi(dx,dy) = k(dy,x)\mu(dx)$, where $\mathcal{B}(S)$ is the Borel $\sigma$-algebra of $S$.
@@ -492,40 +492,41 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 
 %%% Consistency %%%
 \paragraph{Consistency}
+
 \begin{theorem}
 	\label{thm:consistency}
 	Let $\hat{\pi}$ be the solution of Algorithm~\ref{alg:proposed-algorithm} with $\alpha > 0$. For any $\varepsilon > 0$, choose the maximum number of iteration $T$ as
 	\begin{align*}
-		T + 1 \geq \frac{24\alpha(\sup\kappa)^2}{\varepsilon h^2} \cdot \frac{n_{\max}^2}{n_{\min}} .
+		T + 1 \geq \frac{16\alpha(\sup\kappa)^2}{\varepsilon h^2} \cdot \frac{n_{\max}^2}{n_{\min}} .
 	\end{align*}
 	Then,
 	\begin{align*}
-		\mathbb{P}\left(\mathcal{L}(\hat{\pi}) - \inf \mathcal{L} > \varepsilon \right) \leq ...
+		\mathbb{P}\left(\mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \inf_{\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)} \mathcal{L}(\pi) > \varepsilon \right) \leq ...
 	\end{align*}
 \end{theorem}
 
-\begin{assumption}[Uniqueness and local quadratic growth]
-	\label{ass:uniqueness-local-quadratic-growth}
-	%	Let $\Pi(\mathbb{P}_X,\mathbb{P}_Y)$ be endowed with the $1$-Wasserstein distance
-	%	$W_1$ on $\mathcal P(S\times S)$ computed with respect to the product metric
-	%	$\bar d((x,y),(x',y')) := d_S(x,x') + d_S(y,y')$.
-	There exists a unique minimizer $\pi^\ast \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)$ of \eqref{eq:proposed-method}. In addition, there exist constants $c>0$ and $\delta>0$ such that
-	\begin{align*}
-		\mathcal{L}(\pi)-\mathcal{L}(\pi^\ast) \;\geq\; c\, W_1(\pi,\pi^\ast)^2 ,
-	\end{align*}
-	for all $\pi\in\Pi(\mathbb{P}_X,\mathbb{P}_Y)$ with $\mathcal{L}(\pi)\le \mathcal{L}(\pi^\ast)+\delta$.
-\end{assumption}
-
-\begin{corollary}
-	Let $\hat{\pi}$ be the solution of Algorithm~\ref{alg:proposed-algorithm} with $\alpha > 0$. Suppose that \cref{ass:uniqueness-local-quadratic-growth} holds. For any $0 < \varepsilon < \sqrt{\delta/c}$, choose the maximum number of iteration $T$ as
-	\begin{align*}
-		T + 1 \geq \frac{24\alpha(\sup\kappa)^2}{c\varepsilon^2 h^2} \cdot \frac{n_{\max}^2}{n_{\min}} .
-	\end{align*}
-	Then,
-	\begin{align*}
-		\mathbb{P}\left(W_1(\hat{\pi},\pi^\ast) > \varepsilon \right) \leq ...
-	\end{align*}
-\end{corollary}
+%\begin{assumption}[Uniqueness and local quadratic growth]
+%	\label{ass:uniqueness-local-quadratic-growth}
+%	%	Let $\Pi(\mathbb{P}_X,\mathbb{P}_Y)$ be endowed with the $1$-Wasserstein distance
+%	%	$W_1$ on $\mathcal P(S\times S)$ computed with respect to the product metric
+%	%	$\bar d((x,y),(x',y')) := d_S(x,x') + d_S(y,y')$.
+%	There exists a unique minimizer $\pi^\ast \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)$ of \eqref{eq:proposed-method}. In addition, there exist constants $c>0$ and $\delta>0$ such that
+%	\begin{align*}
+%		\mathcal{L}(\pi)-\mathcal{L}(\pi^\ast) \;\geq\; c\, W_1(\pi,\pi^\ast)^2 ,
+%	\end{align*}
+%	for all $\pi\in\Pi(\mathbb{P}_X,\mathbb{P}_Y)$ with $\mathcal{L}(\pi)\le \mathcal{L}(\pi^\ast)+\delta$.
+%\end{assumption}
+%
+%\begin{corollary}
+%	Let $\hat{\pi}$ be the solution of Algorithm~\ref{alg:proposed-algorithm} with $\alpha > 0$. Suppose that \cref{ass:uniqueness-local-quadratic-growth} holds. For any $0 < \varepsilon < \sqrt{\delta/c}$, choose the maximum number of iteration $T$ as
+%	\begin{align*}
+%		T + 1 \geq \frac{24\alpha(\sup\kappa)^2}{c\varepsilon^2 h^2} \cdot \frac{n_{\max}^2}{n_{\min}} .
+%	\end{align*}
+%	Then,
+%	\begin{align*}
+%		\mathbb{P}\left(W_1(\hat{\pi},\pi^\ast) > \varepsilon \right) \leq ...
+%	\end{align*}
+%\end{corollary}
 
 %%% References %%%
 \bibliographystyle{abbrvnat}
@@ -631,21 +632,40 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 
 \subsection{Proof for \cref{thm:consistency}}\label{pf:thm:consistency}
 \begin{proof}
+	One key of consistency is to calculate the convergence rate of empirical distributions. To this end, we first introduce the Wasserstein-$1$ distance.
+	\begin{definition}[Wasserstein-$1$ distance]
+		\label{def:Wasserstein-1}
+		Let $(S,d_S)$ be a compact metric space. For probability measures $\mu$ and $\nu$ on $S$, we define
+		\begin{align*}
+			W_1^S(\mu,\nu) \coloneqq \inf_{\pi \in \Pi(\mu,\nu)} \int_{S \times S} d_S(x,y) \pi(dx,dy) . 
+		\end{align*}
+	\end{definition}
+	
+	\begin{lemma}
+		\label{lem:equivalence-to-weak-convergence}
+		Consider the sequence of probability measures $\{\mu_n: n \geq 1\}$ and $\mu$ on $S$. Then,
+		\begin{align*}
+			W_1^S(\mu_n,\mu) \to 0 \;\; \text{as} \;\; n \to \infty \iff \mu_n \overset{w}{\to} \mu \;\; \text{as} \;\; n \to \infty ,
+		\end{align*}
+		where $\mu_n \overset{w}{\to} \mu$ denotes the weak convergence.
+	\end{lemma}
+	\begin{proof}
+		See details in \cite{villani2008optimal}.
+	\end{proof}
+	
 	First, note that
 %	\begin{align*}
-%		&\mathbb{P}(W_1(\hat{\pi},\pi^\ast) > \varepsilon) \\[2pt]
-%		&\leq \mathbb{P}\left(W_1(\hat{\pi},\pi^\ast) > \varepsilon ,\; \mathcal{L}(\hat{\pi}) - \mathcal{L}(\pi^\ast) \leq c\varepsilon^2\right) 
-%		+ \mathbb{P}\left(\mathcal{L}(\hat{\pi}) - \mathcal{L}(\pi^\ast) > c\varepsilon^2\right) \\[2pt]
-%		&= \mathbb{P}\left(\mathcal{L}(\hat{\pi}) - \mathcal{L}(\pi^\ast) > c\varepsilon^2\right) \\[2pt]
-%		&\leq \mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \inf \mathcal{L}_{n_Xn_Y} \right\vert > \frac{c\varepsilon^2}{3}\right) +\;   \mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \mathcal{L}(\hat{\pi}) \right\vert > \frac{c\varepsilon^2}{3}\right) \\
-%		&\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad +\; \mathbb{P}\left(\left\vert \inf \mathcal{L}_{n_Xn_Y} - \mathcal{L}(\pi^\ast) \right\vert > \frac{c\varepsilon^2}{3}\right) \\
+%		&\mathbb{P}\left(\mathcal{L}(\hat{\pi}) - \inf_{\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)} \mathcal{L}(\pi) > \varepsilon\right) \\[2pt]
+%		&\leq \mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \inf_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathcal{L}_{n_Xn_Y}(\pi) \right\vert > \frac{\varepsilon}{3}\right) \\[5pt]
+%		&\quad\quad\quad\quad\quad\quad\quad\quad\quad +\; \mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \mathcal{L}(\hat{\pi}) \right\vert > \frac{\varepsilon}{3}\right) \\[5pt]
+%		&\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad +\; \mathbb{P}\left(\left\vert \inf_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathcal{L}_{n_Xn_Y}(\pi) - \inf_{\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)} \mathcal{L}(\pi) \right\vert > \frac{\varepsilon}{3}\right) \\
 %		&\eqqcolon E_1 + E_2 + E_3 .
 %	\end{align*}
 	\begin{align*}
-		&\mathbb{P}\left(\mathcal{L}(\hat{\pi}) - \inf \mathcal{L} > \varepsilon\right) \\[2pt]
-		&\leq \mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \inf \mathcal{L}_{n_Xn_Y} \right\vert > \frac{\varepsilon}{3}\right) +\;   \mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \mathcal{L}(\hat{\pi}) \right\vert > \frac{\varepsilon}{3}\right) \\
-		&\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad +\; \mathbb{P}\left(\left\vert \inf \mathcal{L}_{n_Xn_Y} - \inf \mathcal{L} \right\vert > \frac{\varepsilon}{3}\right) \\
-		&\eqqcolon E_1 + E_2 + E_3 .
+		&\mathbb{P}\left(\mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \inf_{\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)} \mathcal{L}(\pi) > \varepsilon\right) \\[2pt]
+		&\leq \mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \inf_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathcal{L}_{n_Xn_Y}(\pi) \right\vert > \frac{\varepsilon}{2}\right) \\[5pt]
+		&\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad +\; \mathbb{P}\left(\left\vert \inf_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathcal{L}_{n_Xn_Y}(\pi) - \inf_{\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)} \mathcal{L}(\pi) \right\vert > \frac{\varepsilon}{2}\right) \\
+		&\eqqcolon E_1 + E_2 .
 	\end{align*}
 	
 	%%% Optimization error %%%
@@ -679,7 +699,7 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	
 	The proof for \cref{lem:FW-convergence} is a standard technique to show the convergence of the FW algorithm. With this result, $E_1$ can be bounded above as follows:
 	\begin{align*}
-		\mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \inf \mathcal{L}_{n_Xn_Y} \right\vert > \frac{\varepsilon}{3}\right) \leq \mathbb{P}\left(\left(\|\hat{D}_X^\kappa\|_{\mathrm{op}} + \|\hat{D}_Y^\kappa\|_{\mathrm{op}}\right)^2 > \frac{\varepsilon n_{\min}(T+1)}{6\alpha}\right) .
+		\mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \inf \mathcal{L}_{n_Xn_Y} \right\vert > \frac{\varepsilon}{2}\right) \leq \mathbb{P}\left(\left(\|\hat{D}_X^\kappa\|_{\mathrm{op}} + \|\hat{D}_Y^\kappa\|_{\mathrm{op}}\right)^2 > \frac{\varepsilon n_{\min}(T+1)}{4\alpha}\right) .
 	\end{align*}
 	Now, considering that $\|\cdot\|_{\mathrm{op}} \leq \|\cdot\|_{\infty}$,
 	\begin{align*}
@@ -691,10 +711,103 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	\end{align*}
 	Thus, if we choose
 	\begin{align*}
-		T + 1 \geq \frac{24\alpha(\sup\kappa)^2}{\varepsilon h^2} \cdot \frac{n_{\max}^2}{n_{\min}} ,
+		T + 1 \geq \frac{16\alpha(\sup\kappa)^2}{\varepsilon h^2} \cdot \frac{n_{\max}^2}{n_{\min}} ,
 	\end{align*}
 	we obtain $E_1 = 0$.
 	
+	To control the bound of $E_2$, we introduce a useful lemma known as the gluing lemma.
+	\begin{lemma}[Gluing lemma]
+		Let $(\mathcal{X}_i,\mu_i)$, $i=1,2,3$, be Polish probability spaces. If $(X_1,X_2)$ is a coupling of $(\mu_1,\mu_2)$ and $(Y_2,Y_3)$ is a coupling of $(\mu_2,\mu_3)$, then one can construct a triple of random elements $(Z_1,Z_2,Z_3)$ such that $(Z_1,Z_2)$ has the same distribution as $(X_1,X_2)$ and $(Z_2,Z_3)$ has the same distribution as $(Y_2,Y_3)$.
+	\end{lemma}
+	\begin{proof}
+		See details in \cite{villani2008optimal}.
+	\end{proof}
+	To use the gluing lemma, we first define two projection couplings $Q_X \in \Pi(\mathbb{P}_X,\hat{\mathbb{P}}_X)$ and $Q_Y \in \Pi(\hat{\mathbb{P}}_Y,\mathbb{P}_Y)$, which will be specified later.
+%	\begin{align*}
+%		Q_X \in \argmin_{\pi \in \Pi(\mathbb{P}_X,\hat{\mathbb{P}}_X)} \mathbb{E}_{(X,\hat{X}) \sim Q}\left[d_S(X,\hat{X})\right] , \quad Q_Y \in \argmin_{\pi \in \Pi(\hat{\mathbb{P}}_Y,\mathbb{P}_Y)} \mathbb{E}_{(\hat{Y},Y) \sim Q}\left[d_S(\hat{Y},Y)\right] .
+%	\end{align*}
+%	Then, by \cref{def:Wasserstein-1}, we get
+%	\begin{align*}
+%		&W_1(\mathbb{P}_X,\hat{\mathbb{P}}_X) = \mathbb{E}_{(X,\hat{X}) \sim Q_X} \left[d_S(X,\hat{X})\right] , \\
+%		&W_1(\hat{\mathbb{P}}_Y,\mathbb{P}_Y) = \mathbb{E}_{(\hat{Y},Y) \sim Q_Y}\left[d_S(\hat{Y},Y)\right] .
+%	\end{align*} 
+	
+	For an arbitrary $\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)$, we can construct a coupling $\Xi \in \Pi(\mathbb{P}_X,\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y,\mathbb{P}_Y)$ such that
+	\begin{align}
+		\label{eq:glued-coupling}
+		\Xi(dx,d\hat{x},d\hat{y},dy) = \underbrace{Q_Y(dy \mid \hat{y})}_{\hat{\mathbb{P}}_Y \to \mathbb{P}_Y} \; \underbrace{\pi(d\hat{y} \mid \hat{x})}_{\hat{\mathbb{P}}_X \to \hat{\mathbb{P}}_Y} \; \underbrace{Q_X(dx \mid \hat{x})}_{\hat{\mathbb{P}}_X \to \mathbb{P}_X} \; \hat{\mathbb{P}}_X(d\hat{x}) ,
+	\end{align}
+	owing to the gluing lemma. Then, define
+	\begin{align*}
+		\Phi_n(\pi)(dx,dy) \coloneqq \int_{(\hat{x},\hat{y}) \in S \times S}  Q_X(dx \mid \hat{x}) \; Q_Y(dy \mid \hat{y}) \; \pi(d\hat{y} \mid \hat{x}) \; \hat{\mathbb{P}}_X(d\hat{x}) ,
+	\end{align*}
+	which makes clear that $\Phi_n(\pi) : \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y) \to \Pi(\mathbb{P}_X,\mathbb{P}_Y)$ is a well-defined function that maps the coupling on $\Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)$ to that on $\Pi(\mathbb{P}_X,\mathbb{P}_Y)$.
+	
+	Let $\pi^\ast_n \in \argmin_{\pi \in \Pi(\hat{\mathbb{P}}_Y,\hat{\mathbb{P}}_Y)} \mathcal{L}_{n_Xn_Y}(\pi)$. Observe that
+	\begin{align*}
+		&\left\vert \mathcal{L}_{n_Xn_Y}(\pi^\ast_n) - \inf_{\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)} \mathcal{L}(\pi) \right\vert \\
+		&\leq \left\vert \mathcal{L}_{n_Xn_Y}(\pi^\ast_n) - \mathcal{L}(\Phi_n(\pi^\ast_n)) \right\vert + \left\vert \mathcal{L}(\Phi_n(\pi^\ast_n)) - \inf_{\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)} \mathcal{L}(\pi) \right\vert \\[5pt]
+		&\leq \sup_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \left\vert \mathcal{L}_{n_Xn_Y}(\pi) - \mathcal{L}(\Phi_n(\pi)) \right\vert \\
+		&\qquad\qquad\qquad + \left\vert \mathcal{L}(\Phi_n(\pi^\ast_n)) -  \mathcal{L}_{n_Xn_Y}(\pi^\ast_n) \right\vert + \left\vert \mathcal{L}_{n_Xn_Y}(\pi^\ast_n) - \inf_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathcal{L}(\Phi_n(\pi)) \right\vert \\
+		&\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad + \left\vert \inf_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathcal{L}(\Phi_n(\pi)) - \inf_{\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)} \mathcal{L}(\pi) \right\vert \\
+		&\leq 3\underbrace{\sup_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \left\vert \mathcal{L}_{n_Xn_Y}(\pi) - \mathcal{L}(\Phi_n(\pi)) \right\vert}_{\eqqcolon \mathrm{I}_n} + \underbrace{\left\vert \inf_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathcal{L}(\Phi_n(\pi)) - \inf_{\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)} \mathcal{L}(\pi) \right\vert}_{\eqqcolon \mathrm{II}_n} .
+	\end{align*}
+	For the second inequality, we use the fact that $\mathcal{L}_{n_Xn_Y}(\pi^\ast_n) = \inf_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathcal{L}_{n_Xn_Y}(\pi)$ and that $|\inf_x f(x) - \inf_x g(x)| \leq \sup_x |f(x) - g(x)|$.
+	
+	Now, define
+	\begin{align*}
+		Q_X \in \argmin_{\pi \in \Pi(\mathbb{P}_X,\hat{\mathbb{P}}_X)} \mathbb{E}_{(X,\hat{X}) \sim Q}\left[\|f(X) - f(\hat{X})\|_2\right] , \quad Q_Y \in \argmin_{\pi \in \Pi(\hat{\mathbb{P}}_Y,\mathbb{P}_Y)} \mathbb{E}_{(\hat{Y},Y) \sim Q}\left[\|f(Y) - f(\hat{Y})\|_2\right] .
+	\end{align*}
+	Then, by \cref{def:Wasserstein-1}, we get
+	\begin{align*}
+		&W_1^{\|\cdot\|_2}(f_{\#}\mathbb{P}_X,f_{\#}\hat{\mathbb{P}}_X) = \mathbb{E}_{(X,\hat{X}) \sim Q_X}\left[\|f(X) - f(\hat{X})\|_2\right] , \\
+		&W_1^{\|\cdot\|_2}(f_{\#}\hat{\mathbb{P}}_Y,f_{\#}\mathbb{P}_Y) = \mathbb{E}_{(\hat{Y},Y) \sim Q_Y}\left[\|f(Y) - f(\hat{Y})\|_2\right] .
+	\end{align*}
+	
+	We first look into $\mathrm{I}_n$. For brevity, let $c_f(x,y) \coloneqq \|f(x) - f(y)\|_2^2$. Then,
+	\begin{align*}
+		\left\vert c_f(x,y) - c_f(x',y') \right\vert &\leq \left(\|f(x) - f(y)\|_2 + \|f(x') - f(y')\|_2\right)\left(\|f(x) - f(y)\|_2 - \|f(x') - f(y')\|_2\right) \\
+													 &\leq 2\left(\|f(x) - f(x')\|_2 + \|f(y) - f(y')\|_2\right) .
+	\end{align*}
+	The last inequality uses the fact that $\mathrm{diam}(M) = 1$. Note that this confirms that $c_f$ is a bounded and $2$-Lipschitz function with respect to the metric
+	\begin{align*}
+		d_f((x,y),(x',y')) \coloneqq \|f(x) - f(x')\|_2 + \|f(y) - f(y')\|_2 .
+	\end{align*}
+	Thus, by the duality formula of the Wasserstein-$1$ distance, for an arbitrary $\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)$,
+	\begin{align*}
+		\Big\vert \mathbb{E}_{(X,Y) \sim \pi}\left[c_f(X,Y)\right] - \mathbb{E}_{(X',Y') \sim \Phi_n(\pi)} \left[c_f(X',Y')\right] \Big\vert \leq 2 W_1^{d_f}(\pi,\Phi_n(\pi)) .
+	\end{align*}
+	Here $W_1^{d_f}(\pi,\Phi_n(\pi))$ can be decomposed as follows:
+	\begin{align*}
+		W_1^{d_f}(\pi,\Phi_n(\pi)) & = \inf_{\gamma \in \Pi(\pi,\Phi_n(\pi))} \mathbb{E}_{((X,Y),(X',Y')) \sim \gamma} \left[\|f(X) - f(X')\|_2 + \|f(Y) - f(Y')\|_2\right] \\
+		&\leq \mathbb{E}_{(X',X,Y,Y') \sim \Xi} \left[\|f(X) - f(X')\|_2 + \|f(Y) - f(Y')\|_2\right] \\
+		&= \mathbb{E}_{(X',X) \sim Q_X} \left[\|f(X) - f(X')\|_2 \right] + \mathbb{E}_{(Y,Y') \sim Q_Y} \left[\|f(Y) - f(Y')\|_2\right] \\
+		&= W_1^{\|\cdot\|_2}(f_{\#}\mathbb{P}_X,f_{\#}\hat{\mathbb{P}}_X) + W_1^{\|\cdot\|_2}(f_{\#}\hat{\mathbb{P}}_Y,f_{\#}\mathbb{P}_Y) .
+	\end{align*}
+	The second inequality is from \eqref{eq:glued-coupling}.
+	
+	We now analyze the convex surrogate term. For $\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)$,
+	\begin{align*}
+		\Big\vert \|D_X^\kappa T_{\pi} - T_{\pi} D_Y^\kappa \|_{\mathrm{HS}}^2 &- \|D_X^\kappa T_{\Phi_n(\pi)} - T_{\Phi_n(\pi)} D_Y^\kappa \|_{\mathrm{HS}}^2 \Big\vert \\
+		&\leq 4\|D_X^{\kappa}\|_{\mathrm{op}} \Big\vert \|D_X^\kappa T_{\pi} - D_X^{\kappa} T_{\Phi_n(\pi)} \|_{\mathrm{HS}} + \|T_{\pi} D_Y^\kappa -T_{\Phi_n(\pi)} D_Y^{\kappa} \|_{\mathrm{HS}} \Big\vert \\
+		&\leq \frac{4\sup \kappa}{h} \Big\vert \|D_X^\kappa T_{\pi} - D_X^{\kappa} T_{\Phi_n(\pi)} \|_{\mathrm{HS}} + \|T_{\pi} D_Y^\kappa -T_{\Phi_n(\pi)} D_Y^{\kappa} \|_{\mathrm{HS}} \Big\vert .
+	\end{align*}
+	The first inequality implicitly uses the fact that $\|T_{\pi}\|_{\mathrm{HS}} = \|T_{\Phi_n(\pi)}\|_{\mathrm{HS}} = 1$ by Schur's test. The second inequality is also a direct result from Schur's test.
+	
+	Observe that
+	\begin{align*}
+		(T_{\Phi_n(\pi)}g)(x) = \int_S g(y) \Phi_n(\pi)(dy \mid x) = \int_S g(y)R_X(d\hat{x} \mid x)\pi(d\hat{y} \mid \hat{x}) Q_Y(dy \mid \hat{y}),
+	\end{align*}
+	where $R_X(d\hat{x} \mid x)$ satisfies $Q_X(dx,d\hat{x}) = R_X(d\hat{x} \mid x)\mathbb{P}_X(dx)$. By defining
+	\begin{align*}
+		(S_Yg)(\hat{y}) \coloneqq \int_{S} g(y)Q_Y(dy \mid \hat{y}) , \quad (U_Xh)(x) \coloneqq \int_S h(\hat{x}) R_X(d\hat{x} \mid x) ,
+	\end{align*}
+	it follows that $T_{\Phi_n(\pi)} = U_X T_{\pi} S_Y$. Thus,
+	\begin{align*}
+		\|D_X^\kappa T_{\pi} - D_X^{\kappa} T_{\Phi_n(\pi)} \|_{\mathrm{HS}} &\leq \|D_X^\kappa\|_{\mathrm{op}}\|T_\pi - U_X T_\pi S_Y \|_{\mathrm{HS}} \\
+		&\leq \|D_X^\kappa\|_{\mathrm{op}}\|(I - U_X)T_\pi + U_X T_\pi (I - S_Y) \|_{\mathrm{HS}} \\
+		&\leq \|D_X^\kappa\|_{\mathrm{op}}\left(\|(I - U_X)\|_{\mathrm{op}} + \|I - S_Y\|_{\mathrm{op}}\right) .
+	\end{align*}
 \end{proof}
 
 %\subsection{Proof for \cref{lem:smooth-loss}}\label{pf:lem:smooth-loss}
