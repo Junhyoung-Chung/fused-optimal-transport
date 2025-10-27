@@ -187,7 +187,7 @@ We also introduce a feature space $M\subset\mathbb{R}^d$ which is compact, and c
 \begin{align*}
 	\Pi(\mu_1,...,\mu_m) \coloneqq \{\pi\ \text{on } S^m :\ \text{the marginals are $\mu_1,...,\mu_m$}\}
 \end{align*}
-the set of all couplings between $\mu$ and $\nu$. Given an arbitrary coupling $\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)$, the conditional expectation operator $T_{\pi}: L^2(S,\mathbb{P}_Y) \to L^2(S,\mathbb{P}_X)$ is defined as $(T_{\pi}g)(x) \coloneqq \mathbb{E}[g(Y) \mid X = x]$ for any $g \in L^2(S,\mathbb{P}_Y)$. Lastly, we say a measurable map $T: S \to S$ pushes forward $\mu$ to $\nu$ if $\mu(T^{-1}(A)) = \nu(A)$ for all $A \in \mathcal{B}(S)$, where $\mathcal{B}(S)$ is the Borel $\sigma$-algebra of $S$. We denote $T_{\#}\mu = \nu$ if $T$ pushes forward $\mu$ to $\nu$.
+the set of all couplings between $\mu_1,...,\mu_m$. Given an arbitrary coupling $\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)$, the conditional expectation operator $T_{\pi}: L^2(S,\mathbb{P}_Y) \to L^2(S,\mathbb{P}_X)$ is defined as $(T_{\pi}g)(x) \coloneqq \mathbb{E}[g(Y) \mid X = x]$ for any $g \in L^2(S,\mathbb{P}_Y)$. Lastly, we say a measurable map $T: S \to S$ pushes forward $\mu$ to $\nu$ if $\mu(T^{-1}(A)) = \nu(A)$ for all $A \in \mathcal{B}(S)$, where $\mathcal{B}(S)$ is the Borel $\sigma$-algebra of $S$. We denote $T_{\#}\mu = \nu$ if $T$ pushes forward $\mu$ to $\nu$.
 %By the disintegration theorem, for $\pi \in \Pi(\mu,\nu)$ there exists a Markov kernel $k(,\cdot,\cdot): \mathcal{B}(S) \times S \to [0,1]$ such that $\pi(dx,dy) = k(dy,x)\mu(dx)$, where $\mathcal{B}(S)$ is the Borel $\sigma$-algebra of $S$.
 
 %%%% Fused GW %%%%
@@ -743,7 +743,7 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	\end{align*}
 	which makes clear that $\Phi_n(\pi) : \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y) \to \Pi(\mathbb{P}_X,\mathbb{P}_Y)$ is a well-defined function that maps the coupling on $\Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)$ to that on $\Pi(\mathbb{P}_X,\mathbb{P}_Y)$.
 	
-	Let $\pi^\ast_n \in \argmin_{\pi \in \Pi(\hat{\mathbb{P}}_Y,\hat{\mathbb{P}}_Y)} \mathcal{L}_{n_Xn_Y}(\pi)$. Observe that
+	Let $\pi^\ast_n \in \argmin_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathcal{L}_{n_Xn_Y}(\pi)$. Observe that
 	\begin{align*}
 		&\left\vert \mathcal{L}_{n_Xn_Y}(\pi^\ast_n) - \inf_{\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)} \mathcal{L}(\pi) \right\vert \\
 		&\leq \left\vert \mathcal{L}_{n_Xn_Y}(\pi^\ast_n) - \mathcal{L}(\Phi_n(\pi^\ast_n)) \right\vert + \left\vert \mathcal{L}(\Phi_n(\pi^\ast_n)) - \inf_{\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)} \mathcal{L}(\pi) \right\vert \\[5pt]
@@ -788,11 +788,15 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	
 	We now analyze the convex surrogate term. For $\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)$,
 	\begin{align*}
-		\Big\vert \|D_X^\kappa T_{\pi} - T_{\pi} D_Y^\kappa \|_{\mathrm{HS}}^2 &- \|D_X^\kappa T_{\Phi_n(\pi)} - T_{\Phi_n(\pi)} D_Y^\kappa \|_{\mathrm{HS}}^2 \Big\vert \\
-		&\leq 4\|D_X^{\kappa}\|_{\mathrm{op}} \Big\vert \|D_X^\kappa T_{\pi} - D_X^{\kappa} T_{\Phi_n(\pi)} \|_{\mathrm{HS}} + \|T_{\pi} D_Y^\kappa -T_{\Phi_n(\pi)} D_Y^{\kappa} \|_{\mathrm{HS}} \Big\vert \\
-		&\leq \frac{4\sup \kappa}{h} \Big\vert \|D_X^\kappa T_{\pi} - D_X^{\kappa} T_{\Phi_n(\pi)} \|_{\mathrm{HS}} + \|T_{\pi} D_Y^\kappa -T_{\Phi_n(\pi)} D_Y^{\kappa} \|_{\mathrm{HS}} \Big\vert .
+		&\Big\vert \|D_X^\kappa T_{\pi} - T_{\pi} D_Y^\kappa \|_{\mathrm{HS}}^2 - \|D_X^\kappa T_{\Phi_n(\pi)} - T_{\Phi_n(\pi)} D_Y^\kappa \|_{\mathrm{HS}}^2 \Big\vert \\
+		&\leq \| D_X^\kappa(T_\pi + T_{\Phi_n(\pi)}) - (T_{\pi} + T_{\Phi_n(\pi)})D_Y^\kappa \|_{\mathrm{HS}}\| D_X^\kappa(T_\pi - T_{\Phi_n(\pi)}) - (T_{\pi} - T_{\Phi_n(\pi)})D_Y^\kappa \|_{\mathrm{HS}} \\
+		&\leq 2(\|D_X^\kappa\|_{\mathrm{op}} + \|D_Y^\kappa\|_{\mathrm{op}})^2 \|T_{\pi} - T_{\Phi_n(\pi)} \|_{\mathrm{HS}} \\
+		&\leq \frac{4\sup\kappa}{h}\|T_{\pi} - T_{\Phi_n(\pi)} \|_{\mathrm{HS}} .
+%		\Big\vert \|D_X^\kappa T_{\pi} - T_{\pi} D_Y^\kappa \|_{\mathrm{HS}}^2 &- \|D_X^\kappa T_{\Phi_n(\pi)} - T_{\Phi_n(\pi)} D_Y^\kappa \|_{\mathrm{HS}}^2 \Big\vert \\
+%		&\leq 2(\|D_X^\kappa\|_{\mathrm{op}} + \|D_Y^\kappa\|_{\mathrm{op}}) \Big\vert \|D_X^\kappa T_{\pi} - D_X^{\kappa} T_{\Phi_n(\pi)} \|_{\mathrm{HS}} + \|T_{\pi} D_Y^\kappa -T_{\Phi_n(\pi)} D_Y^{\kappa} \|_{\mathrm{HS}} \Big\vert \\
+%		&\leq \frac{4\sup \kappa}{h} \Big\vert \|D_X^\kappa T_{\pi} - D_X^{\kappa} T_{\Phi_n(\pi)} \|_{\mathrm{HS}} + \|T_{\pi} D_Y^\kappa -T_{\Phi_n(\pi)} D_Y^{\kappa} \|_{\mathrm{HS}} \Big\vert .
 	\end{align*}
-	The first inequality implicitly uses the fact that $\|T_{\pi}\|_{\mathrm{HS}} = \|T_{\Phi_n(\pi)}\|_{\mathrm{HS}} = 1$ by Schur's test. The second inequality is also a direct result from Schur's test.
+	The first inequality is from the Cauchy-Schwarz inequality, and the last two inequalities are direct results from Schur's test, which gives $\|T_{\pi}\|_{\mathrm{HS}} = \|T_{\Phi_n(\pi)}\|_{\mathrm{HS}} \leq 1$ and $\|D_X^\kappa|_{\mathrm{op}} \leq \sup\kappa/h$.
 	
 	Observe that
 	\begin{align*}
@@ -800,13 +804,36 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	\end{align*}
 	where $R_X(d\hat{x} \mid x)$ satisfies $Q_X(dx,d\hat{x}) = R_X(d\hat{x} \mid x)\mathbb{P}_X(dx)$. By defining
 	\begin{align*}
-		(S_Yg)(\hat{y}) \coloneqq \int_{S} g(y)Q_Y(dy \mid \hat{y}) , \quad (U_Xh)(x) \coloneqq \int_S h(\hat{x}) R_X(d\hat{x} \mid x) ,
+		(S_Yg)(\hat{y}) \coloneqq \int_{S} g(y)Q_Y(dy \mid \hat{y}) , \quad (U_X\ell)(x) \coloneqq \int_S \ell(\hat{x}) R_X(d\hat{x} \mid x) ,
 	\end{align*}
 	it follows that $T_{\Phi_n(\pi)} = U_X T_{\pi} S_Y$. Thus,
 	\begin{align*}
-		\|D_X^\kappa T_{\pi} - D_X^{\kappa} T_{\Phi_n(\pi)} \|_{\mathrm{HS}} &\leq \|D_X^\kappa\|_{\mathrm{op}}\|T_\pi - U_X T_\pi S_Y \|_{\mathrm{HS}} \\
-		&\leq \|D_X^\kappa\|_{\mathrm{op}}\|(I - U_X)T_\pi + U_X T_\pi (I - S_Y) \|_{\mathrm{HS}} \\
-		&\leq \|D_X^\kappa\|_{\mathrm{op}}\left(\|(I - U_X)\|_{\mathrm{op}} + \|I - S_Y\|_{\mathrm{op}}\right) .
+		\|T_{\pi} - T_{\Phi_n(\pi)}\|_{\mathrm{HS}} &\leq \|T_\pi - U_X T_\pi S_Y \|_{\mathrm{HS}} \\
+		&\leq \|(I - U_X)T_\pi + U_X T_\pi (I - S_Y) \|_{\mathrm{HS}} \\
+		&\leq \left(\|I - U_X\|_{\mathrm{op}} + \|I - S_Y\|_{\mathrm{op}}\right) .
+	\end{align*}
+	Now, consider an arbitrary $\ell: S \to \mathbb{R}$ such that
+	\begin{align*}
+		| \ell(x) - \ell(x') | \leq \| f(x) - f(x') \|_2 , \quad \| \ell \|_{\infty} \leq 1 .
+	\end{align*}
+	Its existence is clear since $\ell(x) \coloneqq [f(x)]_1$ satisfies the above constraints. Then,
+	\begin{align*}
+		|(I - U_X)\ell(x)| = \left\vert \int_S (\ell(x) - \ell(\hat{x})) R_X(d\hat{x} \mid x) \right\vert  \leq L\int_S \| f(x) - f(\hat{x}) \|_2 R_X(d\hat{x} \mid x) .
+	\end{align*}
+	This gives that
+	\begin{align*}
+		\int_S | (I - U_X)\ell(x) | \mathbb{P}_X(dx) \leq \mathbb{E}_{(X,\hat{X}) \sim Q_X}\left[\| f(X) - f(\hat{X}) \|_2 \right] = W_1^{\|\cdot\|_2}(f_{\#}\mathbb{P}_X,f_{\#}\hat{\mathbb{P}}_X) .
+	\end{align*}
+	Moreover, we also have
+	\begin{align*}
+		\left(\int_S | (I - U_X)\ell(x) |^2 \mathbb{P}_X(dx) \right)^{1/2} &\leq \|(I - U_X)\ell\|_{\infty}^{1/2} \left(\int_S | (I - U_X)\ell(x) | \mathbb{P}_X(dx)\right)^{1/2} \\
+		&\leq \sqrt{2} \sqrt{W_1^{\|\cdot\|_2}(f_{\#}\mathbb{P}_X,f_{\#}\hat{\mathbb{P}}_X)} ,
+	\end{align*}
+	which implies that $\|I - U_X\|_{\mathrm{op}} \leq \sqrt{2}\sqrt{W_1^{\|\cdot\|_2}(f_{\#}\mathbb{P}_X,f_{\#}\hat{\mathbb{P}}_X)}$. We can analogously get $\|I - S_Y\|_{\mathrm{op}} \leq \sqrt{2}\sqrt{W_1^{\|\cdot\|_2}(f_{\#}\mathbb{P}_Y,f_{\#}\hat{\mathbb{P}}_Y)}$. 
+	
+	Since $\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)$ is arbitrary,
+	\begin{align*}
+		\mathrm{I}_n \leq 
 	\end{align*}
 \end{proof}
 
