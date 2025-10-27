@@ -494,7 +494,7 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	\label{thm:consistency}
 	Let $\hat{\pi}$ be the solution of Algorithm~\ref{alg:proposed-algorithm} with $\alpha > 0$. For any $\varepsilon > 0$, choose the maximum number of iteration $T$ as
 	\begin{align*}
-		T + 1 \geq \frac{16\alpha(\sup\kappa)^2}{\varepsilon h^2} \cdot \frac{n_{\max}^2}{n_{\min}} .
+		T + 1 \geq 16\alpha \cdot \frac{n_{\max}^2}{\varepsilon n_{\min}} .
 	\end{align*}
 	Then,
 	\begin{align*}
@@ -700,15 +700,15 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	\end{align*}
 	Now, considering that $\|\cdot\|_{\mathrm{op}} \leq \|\cdot\|_{\infty}$,
 	\begin{align*}
-		\|\hat{D}_X^\kappa\|_{\mathrm{op}} \leq \max_{i} \sum_{j=1}^{n_X} [\hat{D}_X^\kappa]_{ij} \leq \frac{n_X\sup\kappa}{h} , \quad \|\hat{D}_Y^\kappa\|_{\mathrm{op}} \leq \frac{n_Y\sup\kappa}{h} .
+		\|\hat{D}_X^\kappa\|_{\mathrm{op}} \leq \max_{i} \sum_{j=1}^{n_X} [\hat{D}_X^\kappa]_{ij} \leq n_X , \quad \|\hat{D}_Y^\kappa\|_{\mathrm{op}} \leq n_Y .
 	\end{align*}
 	This gives that
 	\begin{align*}
-		\left(\|\hat{D}_X^\kappa\|_{\mathrm{op}} + \|\hat{D}_Y^\kappa\|_{\mathrm{op}}\right)^2 \leq \frac{4n_{\max}^2(\sup\kappa)^2}{h^2} .
+		\left(\|\hat{D}_X^\kappa\|_{\mathrm{op}} + \|\hat{D}_Y^\kappa\|_{\mathrm{op}}\right)^2 \leq 4n_{\max}^2 .
 	\end{align*}
 	Thus, if we choose
 	\begin{align*}
-		T + 1 \geq \frac{16\alpha(\sup\kappa)^2}{\varepsilon h^2} \cdot \frac{n_{\max}^2}{n_{\min}} ,
+		T + 1 \geq 16\alpha \cdot \frac{n_{\max}^2}{\varepsilon n_{\min}} ,
 	\end{align*}
 	we obtain $E_1 = 0$.
 	
@@ -785,70 +785,10 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	
 	We now analyze the convex surrogate term. For $\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)$,
 	\begin{align*}
-		&\Big\vert \|D_{\hat{\mathbb{P}}_X}^{\kappa} T_{\pi} - T_{\pi} D_{\hat{\mathbb{P}}_Y}^{\kappa} \|_{\mathrm{HS}}^2 - \|D_{\mathbb{P}_X}^{\kappa} T_{\Phi_n(\pi)} - T_{\Phi_n(\pi)} D_{\mathbb{P}_Y}^{\kappa} \|_{\mathrm{HS}}^2 \Big\vert \\
-		&\leq \underbrace{\Big\vert \|D_{\hat{\mathbb{P}}_X}^{\kappa} T_{\pi} - T_{\pi} D_{\hat{\mathbb{P}}_Y}^{\kappa} \|_{\mathrm{HS}}^2 - \|D_{\mathbb{P}_X}^{\kappa} T_{\pi} - T_{\pi} D_{\mathbb{P}_Y}^{\kappa} \|_{\mathrm{HS}}^2 \Big\vert }_{(A)}\\
-		&\qquad\qquad\qquad\qquad\qquad\qquad\qquad + \underbrace{\Big\vert \|D_{\mathbb{P}_X}^{\kappa} T_{\pi} - T_{\pi} D_{\mathbb{P}_Y}^{\kappa} \|_{\mathrm{HS}}^2 - \|D_{\mathbb{P}_X}^{\kappa} T_{\Phi_n(\pi)} - T_{\Phi_n(\pi)} D_{\mathbb{P}_Y}^{\kappa} \|_{\mathrm{HS}}^2 \Big\vert}_{(B)} .
+		\Big\vert \|D_{\hat{\mathbb{P}}_X}^{\kappa} T_{\pi} - T_{\pi} D_{\hat{\mathbb{P}}_Y}^{\kappa} \|_{\mathrm{HS}}^2 - \|D_{\mathbb{P}_X}^{\kappa} T_{\Phi_n(\pi)} - T_{\Phi_n(\pi)} D_{\mathbb{P}_Y}^{\kappa} \|_{\mathrm{HS}}^2 \Big\vert
 	\end{align*}
 	
-	%%% (A) %%%
-	For ease of notation, define $\mathcal{E}_X \coloneqq D_{\hat{\mathbb{P}}_X}^{\kappa} - D_{\mathbb{P}_X}^{\kappa}$ and $\mathcal{E}_Y \coloneqq D_{\hat{\mathbb{P}}_Y}^{\kappa} - D_{\mathbb{P}_Y}^{\kappa}$. Then,
-	\begin{align*}
-		(A) &= \Big\vert \| (D_{\mathbb{P}_X}^{\kappa}T_\pi - T_{\pi}D_{\mathbb{P}_Y}^{\kappa}) + (\mathcal{E}_XT_\pi - T_\pi\mathcal{E}_Y) \|_{\mathrm{HS}}^2 - \|D_{\mathbb{P}_X}^{\kappa} T_{\pi} - T_{\pi} D_{\mathbb{P}_Y}^{\kappa} \|_{\mathrm{HS}}^2 \Big\vert \\
-		&\leq \Big(\|D_{\hat{\mathbb{P}}_X}^{\kappa} T_{\pi} - T_{\pi} D_{\hat{\mathbb{P}}_Y}^{\kappa} \|_{\mathrm{HS}} + \|D_{\mathbb{P}_X}^{\kappa} T_{\pi} - T_{\pi} D_{\mathbb{P}_Y}^{\kappa} \|_{\mathrm{HS}}\Big) \|\mathcal{E}_XT_\pi - T_\pi\mathcal{E}_Y\|_{\mathrm{HS}} \\
-		&\leq \Big(\|D_{\hat{\mathbb{P}}_X}^{\kappa} T_{\pi} - T_{\pi} D_{\hat{\mathbb{P}}_Y}^{\kappa} \|_{\mathrm{HS}} + \|D_{\mathbb{P}_X}^{\kappa} T_{\pi} - T_{\pi} D_{\mathbb{P}_Y}^{\kappa} \|_{\mathrm{HS}}\Big) \Big(\|\mathcal{E}_X\|_{\mathrm{op}} + \|\mathcal{E}_Y\|_{\mathrm{op}}\Big) \|T_\pi\|_{\mathrm{HS}} \\
-		&\leq 4\|T_\pi\|_{\mathrm{HS}}\Big(\|\mathcal{E}_X\|_{\mathrm{op}} + \|\mathcal{E}_Y\|_{\mathrm{op}}\Big) ,
-	\end{align*}
-	where the last inequality is from \cref{lem:regularization-term}.
-	
-	Here,
-	\begin{align*}
-		\|\mathcal{E}_X\|_{\mathrm{op}} = \sup\left\{\|\mathcal{E}_X(g)\|_{L^2}: g \in \right\}
-	\end{align*}
-	
-	
-	
-	
-	
-	
-	The first inequality is from the Cauchy-Schwarz inequality, and the last two inequalities are direct results from Schur's test, which gives $\|T_{\pi}\|_{\mathrm{HS}} = \|T_{\Phi_n(\pi)}\|_{\mathrm{HS}} \leq 1$ and $\|D_{\mathbb{P}_X}^{\kappa}|_{\mathrm{op}} \leq \sup\kappa/h$.
-	
-	Observe that
-	\begin{align*}
-		(T_{\Phi_n(\pi)}g)(x) = \int_S g(y) \Phi_n(\pi)(dy \mid x) = \int_S g(y)R_X(d\hat{x} \mid x)\pi(d\hat{y} \mid \hat{x}) Q_Y(dy \mid \hat{y}),
-	\end{align*}
-	where $R_X(d\hat{x} \mid x)$ satisfies $Q_X(dx,d\hat{x}) = R_X(d\hat{x} \mid x)\mathbb{P}_X(dx)$. By defining
-	\begin{align*}
-		(S_Yg)(\hat{y}) \coloneqq \int_{S} g(y)Q_Y(dy \mid \hat{y}) , \quad (U_X\ell)(x) \coloneqq \int_S \ell(\hat{x}) R_X(d\hat{x} \mid x) ,
-	\end{align*}
-	it follows that $T_{\Phi_n(\pi)} = U_X T_{\pi} S_Y$. Thus,
-	\begin{align*}
-		\|T_{\pi} - T_{\Phi_n(\pi)}\|_{\mathrm{HS}} &\leq \|T_\pi - U_X T_\pi S_Y \|_{\mathrm{HS}} \\
-		&\leq \|(I - U_X)T_\pi + U_X T_\pi (I - S_Y) \|_{\mathrm{HS}} \\
-		&\leq \left(\|I - U_X\|_{\mathrm{op}} + \|I - S_Y\|_{\mathrm{op}}\right) .
-	\end{align*}
-	Now, consider an arbitrary $\ell: S \to \mathbb{R}$ such that
-	\begin{align*}
-		| \ell(x) - \ell(x') | \leq \| f(x) - f(x') \|_2 , \quad \| \ell \|_{\infty} \leq 1 .
-	\end{align*}
-	Its existence is clear since $\ell(x) \coloneqq [f(x)]_1$ satisfies the above constraints. Then,
-	\begin{align*}
-		|(I - U_X)\ell(x)| = \left\vert \int_S (\ell(x) - \ell(\hat{x})) R_X(d\hat{x} \mid x) \right\vert  \leq L\int_S \| f(x) - f(\hat{x}) \|_2 R_X(d\hat{x} \mid x) .
-	\end{align*}
-	This gives that
-	\begin{align*}
-		\int_S | (I - U_X)\ell(x) | \mathbb{P}_X(dx) \leq \mathbb{E}_{(X,\hat{X}) \sim Q_X}\left[\| f(X) - f(\hat{X}) \|_2 \right] = W_1^{\|\cdot\|_2}(f_{\#}\mathbb{P}_X,f_{\#}\hat{\mathbb{P}}_X) .
-	\end{align*}
-	Moreover, we also have
-	\begin{align*}
-		\left(\int_S | (I - U_X)\ell(x) |^2 \mathbb{P}_X(dx) \right)^{1/2} &\leq \|(I - U_X)\ell\|_{\infty}^{1/2} \left(\int_S | (I - U_X)\ell(x) | \mathbb{P}_X(dx)\right)^{1/2} \\
-		&\leq \sqrt{2} \sqrt{W_1^{\|\cdot\|_2}(f_{\#}\mathbb{P}_X,f_{\#}\hat{\mathbb{P}}_X)} ,
-	\end{align*}
-	which implies that $\|I - U_X\|_{\mathrm{op}} \leq \sqrt{2}\sqrt{W_1^{\|\cdot\|_2}(f_{\#}\mathbb{P}_X,f_{\#}\hat{\mathbb{P}}_X)}$. We can analogously get $\|I - S_Y\|_{\mathrm{op}} \leq \sqrt{2}\sqrt{W_1^{\|\cdot\|_2}(f_{\#}\mathbb{P}_Y,f_{\#}\hat{\mathbb{P}}_Y)}$. 
-	
-	Since $\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)$ is arbitrary,
-	\begin{align*}
-		\mathrm{I}_n \leq 
-	\end{align*}
+
 \end{proof}
 
 %\subsection{Proof for \cref{lem:smooth-loss}}\label{pf:lem:smooth-loss}
