@@ -489,17 +489,17 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 
 %%% Consistency %%%
 \paragraph{Consistency}
-
+We first state some technical assumptions to provide a convergence rate for our proposed method.
 \begin{assumption}
 	\label{ass:consistency}
 	$ $
 	\begin{itemize}
 		\item[(A1)] $(S,d_S,\eta)$ is a $d$-dimensional compact Riemannian manifold.
-		\item[(A2)] The density of $X$, defined by $p = d\mathbb{P}_X/d\eta$, is strictly bounded above and below:
+		\item[(A2)] The densities of $X$ and $Y$, defined by $p_X = d\mathbb{P}_X/d\eta$ and $p_Y = d\mathbb{P}_Y/d\eta$, are strictly bounded above and below:
 		\begin{align*}
-			0 < p_{\min} \leq p(x) \leq p_{\max} < \infty , \quad p_{\min} \leq p_{\max} .
+			0 < p_{\min} \leq p_X,p_Y \leq p_{\max} < \infty .
 		\end{align*}
-		\item[(A3)] For each $n_X \geq 1$, no sample is replicated, that is, all $X_1,...,X_{n_X}$ and $Y_1,...,Y_{n_Y}$ are distinct, respectively.
+		\item[(A3)] For each $n_X,n_Y \geq 1$, no sample is replicated, that is, all $X_1,...,X_{n_X}$ and $Y_1,...,Y_{n_Y}$ are distinct, respectively.
 		\item[(A4)] $\kappa$ is $L_\kappa$-Lipschitz continuous.
 		\item[(A5)] $f$ is $L_f$-Lipschitz continuous.
 	\end{itemize}
@@ -507,13 +507,10 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 
 \begin{theorem}
 	\label{thm:consistency}
-	Let $\hat{\pi}$ be the solution of Algorithm~\ref{alg:proposed-algorithm} with $\alpha > 0$. For any $\varepsilon > 0$, choose the maximum number of iteration $T$ as
+	Let $\hat{\pi}$ be the solution of Algorithm~\ref{alg:proposed-algorithm} with $\alpha > 0$. Suppose that \cref{ass:consistency} holds.
+	Then, for some constant $C > 0$,
 	\begin{align*}
-		T + 1 \geq 16\alpha \cdot \frac{n_{\max}^2}{\varepsilon n_{\min}} .
-	\end{align*}
-	Then,
-	\begin{align*}
-		\mathbb{P}\left(\mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \inf_{\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)} \mathcal{L}(\pi) > \varepsilon \right) \leq ...
+		\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \inf_{\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)} \mathcal{L}(\pi) \right\vert \leq \underbrace{\frac{8\alpha \, n_{\max}^2}{n_{\min}(T+1)}}_{\text{\emph{Optimization error}}} + C\underbrace{\left(W_2^{d_S}(\mathbb{P}_X,\hat{\mathbb{P}}_X) + W_2^{d_S}(\mathbb{P}_Y,\hat{\mathbb{P}}_Y) \right)}_{\text{\emph{Statistical error}}} .
 	\end{align*}
 \end{theorem}
 
@@ -666,17 +663,9 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	\end{proof}
 	
 	First, note that
-%	\begin{align*}
-%		&\mathbb{P}\left(\mathcal{L}(\hat{\pi}) - \inf_{\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)} \mathcal{L}(\pi) > \varepsilon\right) \\[2pt]
-%		&\leq \mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \inf_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathcal{L}_{n_Xn_Y}(\pi) \right\vert > \frac{\varepsilon}{3}\right) \\[5pt]
-%		&\quad\quad\quad\quad\quad\quad\quad\quad\quad +\; \mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \mathcal{L}(\hat{\pi}) \right\vert > \frac{\varepsilon}{3}\right) \\[5pt]
-%		&\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad\quad +\; \mathbb{P}\left(\left\vert \inf_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathcal{L}_{n_Xn_Y}(\pi) - \inf_{\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)} \mathcal{L}(\pi) \right\vert > \frac{\varepsilon}{3}\right) \\
-%		&\eqqcolon E_1 + E_2 + E_3 .
-%	\end{align*}
 	\begin{align*}
-		&\mathbb{P}\left(\mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \inf_{\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)} \mathcal{L}(\pi) > \varepsilon\right) \\[2pt]
-		&\leq \mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \inf_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathcal{L}_{n_Xn_Y}(\pi) \right\vert > \frac{\varepsilon}{2}\right) \\[5pt]
-		&\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad +\; \mathbb{P}\left(\left\vert \inf_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathcal{L}_{n_Xn_Y}(\pi) - \inf_{\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)} \mathcal{L}(\pi) \right\vert > \frac{\varepsilon}{2}\right) \\
+		&\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \inf_{\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)} \mathcal{L}(\pi) \right\vert \\
+		&\leq \left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \inf_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathcal{L}_{n_Xn_Y}(\pi) \right\vert + \left\vert \inf_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathcal{L}_{n_Xn_Y}(\pi) - \inf_{\pi \in \Pi(\mathbb{P}_X,\mathbb{P}_Y)} \mathcal{L}(\pi) \right\vert \\
 		&\eqqcolon E_1 + E_2 .
 	\end{align*}
 	
@@ -709,11 +698,7 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 		See Appendix~\ref{pf:lem:FW-convergence}.
 	\end{proof}
 	
-	The proof for \cref{lem:FW-convergence} is a standard technique to show the convergence of the FW algorithm. With this result, $E_1$ can be bounded above as follows:
-	\begin{align*}
-		\mathbb{P}\left(\left\vert \mathcal{L}_{n_Xn_Y}(\hat{\pi}) - \inf \mathcal{L}_{n_Xn_Y} \right\vert > \frac{\varepsilon}{2}\right) \leq \mathbb{P}\left(\left(\|\hat{D}_X^\kappa\|_{\mathrm{op}} + \|\hat{D}_Y^\kappa\|_{\mathrm{op}}\right)^2 > \frac{\varepsilon n_{\min}(T+1)}{4\alpha}\right) .
-	\end{align*}
-	Now, considering that $\|\cdot\|_{\mathrm{op}} \leq \|\cdot\|_{\infty}$,
+	The proof for \cref{lem:FW-convergence} is a standard technique to show the convergence of the FW algorithm. Considering that $\|\cdot\|_{\mathrm{op}} \leq \|\cdot\|_{\infty}$,
 	\begin{align*}
 		\|\hat{D}_X^\kappa\|_{\mathrm{op}} \leq \max_{i} \sum_{j=1}^{n_X} [\hat{D}_X^\kappa]_{ij} \leq n_X , \quad \|\hat{D}_Y^\kappa\|_{\mathrm{op}} \leq n_Y .
 	\end{align*}
@@ -721,11 +706,10 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	\begin{align*}
 		\left(\|\hat{D}_X^\kappa\|_{\mathrm{op}} + \|\hat{D}_Y^\kappa\|_{\mathrm{op}}\right)^2 \leq 4n_{\max}^2 .
 	\end{align*}
-	Thus, if we choose
+	Thus,
 	\begin{align*}
-		T + 1 \geq 16\alpha \cdot \frac{n_{\max}^2}{\varepsilon n_{\min}} ,
+		E_1 \leq \frac{8\alpha \, n_{\max}^2}{n_{\min}(T+1)} .
 	\end{align*}
-	we obtain $E_1 = 0$.
 	
 	To control the bound of $E_2$, we introduce a useful lemma known as the gluing lemma.
 	\begin{lemma}[Gluing lemma]
