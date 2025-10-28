@@ -491,6 +491,7 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 \paragraph{Consistency}
 
 \begin{assumption}
+	\label{ass:consistency}
 	$ $
 	\begin{itemize}
 		\item[(A1)] $(S,d_S,\eta)$ is a $d$-dimensional compact Riemannian manifold.
@@ -498,7 +499,9 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 		\begin{align*}
 			0 < p_{\min} \leq p(x) \leq p_{\max} < \infty , \quad p_{\min} \leq p_{\max} .
 		\end{align*}
-		\item[(A3)] $f$ is $L_f$-Lipschitz continuous.
+		\item[(A3)] For each $n_X \geq 1$, no sample is replicated, that is, all $X_1,...,X_{n_X}$ and $Y_1,...,Y_{n_Y}$ are distinct, respectively.
+		\item[(A4)] $\kappa$ is $L_\kappa$-Lipschitz continuous.
+		\item[(A5)] $f$ is $L_f$-Lipschitz continuous.
 	\end{itemize}
 \end{assumption}
 
@@ -642,11 +645,11 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 \subsection{Proof for \cref{thm:consistency}}\label{pf:thm:consistency}
 \begin{proof}
 	One key of consistency is to calculate the convergence rate of empirical distributions. To this end, we first introduce the Wasserstein-$1$ distance.
-	\begin{definition}[Wasserstein-$1$ distance]
-		\label{def:Wasserstein-1}
+	\begin{definition}[Wasserstein-$p$ distance]
+		\label{def:Wasserstein-p}
 		Let $(S,d_S)$ be a compact metric space. For probability measures $\mu$ and $\nu$ on $S$, we define
 		\begin{align*}
-			W_1^S(\mu,\nu) \coloneqq \inf_{\pi \in \Pi(\mu,\nu)} \int_{S \times S} d_S(x,y) \pi(dx,dy) . 
+			W_p^S(\mu,\nu) \coloneqq \inf_{\pi \in \Pi(\mu,\nu)} \left(\int_{S \times S} d_S(x,y)^p \pi(dx,dy)\right)^{1/p} . 
 		\end{align*}
 	\end{definition}
 	
@@ -654,7 +657,7 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 		\label{lem:equivalence-to-weak-convergence}
 		Consider the sequence of probability measures $\{\mu_n: n \geq 1\}$ and $\mu$ on $S$. Then,
 		\begin{align*}
-			W_1^S(\mu_n,\mu) \to 0 \;\; \text{as} \;\; n \to \infty \iff \mu_n \overset{w}{\to} \mu \;\; \text{as} \;\; n \to \infty ,
+			W_p^S(\mu_n,\mu) \to 0 \;\; \text{as} \;\; n \to \infty \iff \mu_n \overset{w}{\to} \mu \;\; \text{as} \;\; n \to \infty ,
 		\end{align*}
 		where $\mu_n \overset{w}{\to} \mu$ denotes the weak convergence.
 	\end{lemma}
@@ -764,13 +767,14 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	For the second inequality, we use the fact that $\mathcal{L}_{n_Xn_Y}(\pi^\ast_n) = \inf_{\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)} \mathcal{L}_{n_Xn_Y}(\pi)$ and that $|\inf_x f(x) - \inf_x g(x)| \leq \sup_x |f(x) - g(x)|$.
 	
 	Now, define
+	\begin{align}
+		\label{eq:conditional-glue}
+		Q_X \in \argmin_{Q \in \Pi(\mathbb{P}_X,\hat{\mathbb{P}}_X)} \mathbb{E}_{(X,\hat{X}) \sim Q}\left[d_S(X,\hat{X})^2\right] , \quad Q_Y \in \argmin_{Q \in \Pi(\hat{\mathbb{P}}_Y,\mathbb{P}_Y)} \mathbb{E}_{(\hat{Y},Y) \sim Q}\left[d_S(Y,\hat{Y})^2\right] .
+	\end{align}
+	Then, by \cref{def:Wasserstein-p}, we get
 	\begin{align*}
-		Q_X \in \argmin_{Q \in \Pi(\mathbb{P}_X,\hat{\mathbb{P}}_X)} \mathbb{E}_{(X,\hat{X}) \sim Q}\left[\|f(X) - f(\hat{X})\|_2\right] , \quad Q_Y \in \argmin_{Q \in \Pi(\hat{\mathbb{P}}_Y,\mathbb{P}_Y)} \mathbb{E}_{(\hat{Y},Y) \sim Q}\left[\|f(Y) - f(\hat{Y})\|_2\right] .
-	\end{align*}
-	Then, by \cref{def:Wasserstein-1}, we get
-	\begin{align*}
-		&W_1^{\|\cdot\|_2}(f_{\#}\mathbb{P}_X,f_{\#}\hat{\mathbb{P}}_X) = \mathbb{E}_{(X,\hat{X}) \sim Q_X}\left[\|f(X) - f(\hat{X})\|_2\right] , \\
-		&W_1^{\|\cdot\|_2}(f_{\#}\hat{\mathbb{P}}_Y,f_{\#}\mathbb{P}_Y) = \mathbb{E}_{(\hat{Y},Y) \sim Q_Y}\left[\|f(Y) - f(\hat{Y})\|_2\right] .
+		&W_2^{d_S}(\mathbb{P}_X,\hat{\mathbb{P}}_X) = \left(\mathbb{E}_{(X,\hat{X}) \sim Q_X}\left[d_S(X,\hat{X})^2\right]\right)^{1/2} , \\
+		&W_2^{d_S}(\hat{\mathbb{P}}_Y,\mathbb{P}_Y) = \left(\mathbb{E}_{(\hat{Y},Y) \sim Q_Y}\left[d_S(Y,\hat{Y})^2\right]\right)^{1/2} .
 	\end{align*}
 	
 	We first look into $\mathrm{I}_n$. For brevity, let $c_f(x,y) \coloneqq \|f(x) - f(y)\|_2^2$. Then,
@@ -791,45 +795,42 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 		W_1^{d_f}(\pi,\Phi_n(\pi)) & = \inf_{\gamma \in \Pi(\pi,\Phi_n(\pi))} \mathbb{E}_{((X,Y),(X',Y')) \sim \gamma} \left[\|f(X) - f(X')\|_2 + \|f(Y) - f(Y')\|_2\right] \\
 		&\leq \mathbb{E}_{(X',X,Y,Y') \sim \Xi} \left[\|f(X) - f(X')\|_2 + \|f(Y) - f(Y')\|_2\right] \\
 		&= \mathbb{E}_{(X',X) \sim Q_X} \left[\|f(X) - f(X')\|_2 \right] + \mathbb{E}_{(Y,Y') \sim Q_Y} \left[\|f(Y) - f(Y')\|_2\right] \\
-		&= W_1^{\|\cdot\|_2}(f_{\#}\mathbb{P}_X,f_{\#}\hat{\mathbb{P}}_X) + W_1^{\|\cdot\|_2}(f_{\#}\hat{\mathbb{P}}_Y,f_{\#}\mathbb{P}_Y) .
+		&\leq L_f \left(\mathbb{E}_{(X',X) \sim Q_X} \left[d_S(X,X') \right] + \mathbb{E}_{(Y,Y') \sim Q_Y} \left[d_S(Y,Y')\right]\right) \\
+		&\leq L_f \left(W_2^{d_S}(\mathbb{P}_X,\hat{\mathbb{P}}_X) + W_2^{d_S}(\mathbb{P}_Y,\hat{\mathbb{P}}_Y)\right) .
 	\end{align*}
 	The second inequality is from \eqref{eq:glued-coupling}.
 	
-	We now analyze the convex surrogate term. For $\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)$,
+	We now analyze the convex surrogate term:
 	\begin{align*}
 		&\Big\vert \|D_{\hat{\mathbb{P}}_X}^{\kappa} T_{\pi} - T_{\pi} D_{\hat{\mathbb{P}}_Y}^{\kappa} \|_{\mathrm{HS}}^2 - \|D_{\mathbb{P}_X}^{\kappa} T_{\Phi_n(\pi)} - T_{\Phi_n(\pi)} D_{\mathbb{P}_Y}^{\kappa} \|_{\mathrm{HS}}^2 \Big\vert \\
-		&= \left\vert \int_S\int_S \Gamma_{\pi}(x,y)^2\hat{\mathbb{P}}_X(dx)\hat{\mathbb{P}}_Y(dy) - \int_S\int_S \Gamma_{\Phi_n(\pi))}(x,y)^2 \mathbb{P}_X(dx)\mathbb{P}_Y(dy) \right\vert \\
-		&\leq \underbrace{\left\vert \int_S\int_S (\Gamma_{\pi}(x,y)^2 - \Gamma_{\Phi_n(\pi))}(x,y)^2)\hat{\mathbb{P}}_X(dx)\hat{\mathbb{P}}_Y(dy) \right\vert}_{\eqqcolon (A)} \\
-		&\qquad\qquad\qquad\qquad\qquad\qquad + \underbrace{\left\vert \int_S\int_S \Gamma_{\Phi_n(\pi))}(x,y)^2 (\hat{\mathbb{P}}_X(dx)\hat{\mathbb{P}}_Y(dy) - \mathbb{P}_X(dx)\mathbb{P}_Y(dy)) \right\vert}_{\eqqcolon (B)} .
+		&= \left\vert \int_S\int_S \Gamma_{\pi}(x,y)^2\hat{\mathbb{P}}_X(dx)\hat{\mathbb{P}}_Y(dy) - \int_S\int_S \Gamma_{\Phi_n(\pi)}(x,y)^2 \mathbb{P}_X(dx)\mathbb{P}_Y(dy) \right\vert \\
+		&\leq \underbrace{\left\vert \int_S\int_S (\Gamma_{\pi}(x,y)^2 - \Gamma_{\Phi_n(\pi)}(x,y)^2)\hat{\mathbb{P}}_X(dx)\hat{\mathbb{P}}_Y(dy) \right\vert}_{\eqqcolon (A)} \\
+		&\qquad\qquad\qquad\qquad\qquad\qquad + \underbrace{\left\vert \int_S\int_S \Gamma_{\Phi_n(\pi)}(x,y)^2 (\hat{\mathbb{P}}_X(dx)\hat{\mathbb{P}}_Y(dy) - \mathbb{P}_X(dx)\mathbb{P}_Y(dy)) \right\vert}_{\eqqcolon (B)} .
 	\end{align*}
 	
 	$(A)$ can be further decomposed as
 	\begin{align*}
-		(A) &\leq 2\int_S\int_S \left\vert \Gamma_{\pi}(x,y) - \Gamma_{\Phi_n(\pi))}(x,y) \right\vert \hat{\mathbb{P}}_X(dx)\hat{\mathbb{P}}_Y(dy) \\
-			&= \frac{2}{n_Xn_Y} \sum_{i,j} \left\vert \Gamma_{\pi}(X_i,Y_j) - \Gamma_{\Phi_n(\pi))}(X_i,Y_j) \right\vert .
+		(A) &\leq 2\int_S\int_S \left\vert \Gamma_{\pi}(x,y) - \Gamma_{\Phi_n(\pi)}(x,y) \right\vert \hat{\mathbb{P}}_X(dx)\hat{\mathbb{P}}_Y(dy) \\
+			&= \frac{2}{n_Xn_Y} \sum_{i,j} \left\vert \Gamma_{\pi}(X_i,Y_j) - \Gamma_{\Phi_n(\pi)}(X_i,Y_j) \right\vert .
 	\end{align*}
 	Observe that
 	\begin{align*}
-		&\left\vert \Gamma_{\pi}(X_i,Y_j) - \Gamma_{\Phi_n(\pi))}(X_i,Y_j) \right\vert \\
+		&\left\vert \Gamma_{\pi}(X_i,Y_j) - \Gamma_{\Phi_n(\pi)}(X_i,Y_j) \right\vert \\
 		&\leq \left\vert \mathbb{E}_{\pi}(K(X_i,X) \mid Y=Y_j) - \mathbb{E}_{\Phi_n(\pi)}(K(X_i,X) \mid Y=Y_j) \right\vert \\
 		&\qquad\qquad\qquad\qquad\qquad\qquad + \left\vert \mathbb{E}_{\pi}(K(Y_j,Y) \mid X=X_i) - \mathbb{E}_{\Phi_n(\pi)}(K(Y_j,Y) \mid X=X_i) \right\vert .
 	\end{align*}
 	By the symmetry, it suffices to analyze the first term in the last inequality. Note that
 	\begin{align*}
-		\mathbb{E}_{\pi}(K(X_i,X) \mid Y=Y_j) = \frac{1}{n_Y} \sum_{i' = 1}^{n_X} d_S(X_i,X_{i'}) \pi_{ij} .
+		\mathbb{E}_{\pi}(K(X_i,X) \mid Y=Y_j) = n_Y \sum_{i' = 1}^{n_X} \pi_{i'j} K(X_i,X_{i'}) .
 	\end{align*}
-	To discuss $\mathbb{E}_{\Phi_n(\pi)}(K(X_i,X) \mid Y=Y_j)$, we first define the followings:
-	\begin{align}
-		\label{eq:closest_Qx}
-		Q_X \in \argmin_{Q \in \Pi(\mathbb{P}_X,\hat{\mathbb{P}}_X)} \mathbb{E}_{(X,\hat{X}) \sim Q}\left[d_S(X,\hat{X})\right] . %, \quad Q_Y \in \argmin_{\pi \in \Pi(\hat{\mathbb{P}}_Y,\mathbb{P}_Y)} \mathbb{E}_{(\hat{Y},Y) \sim Q}\left[d_S(Y,\hat{Y})\right] .
-	\end{align}
-	The following lemma provides the form of $Q_X$.
+	To discuss $\mathbb{E}_{\Phi_n(\pi)}(K(X_i,X) \mid Y=Y_j)$, we first state a useful lemma:
 	\begin{lemma}
-		Let $Q_X$ be defined as in \eqref{eq:closest_Qx}. 
+		\label{lem:laguerre}
+		Let $Q_X$ be defined as in \eqref{eq:conditional-glue}, and suppose that \cref{ass:consistency} holds.
 		Then, for all $n_X \ge 1$, there exists a collection of measurable sets 
 		$\{V_i : i = 1,\dots,n_X\}$ forming a Laguerre diagram such that
 		\begin{align*}
-			V_i = \{x \in S : d_S(x,X_i) - \psi_i \le d_S(x,X_j) - \psi_j,\;\forall j\} , \quad \mathbb{P}_X(V_i) = 1/n_X, \quad X_i \in V_i,
+			V_i = \left\{x \in S : \frac{1}{2}d_S(x,X_i)^2 - \psi_i \le \frac{1}{2}d_S(x,X_j)^2 - \psi_j,\;\forall j \right\} , \quad \mathbb{P}_X(V_i) = 1/n_X, \quad X_i \in V_i,
 		\end{align*}
 		for some $\psi = (\psi_1,\dots,\psi_{n_X}) \in \mathbb{R}^{n_X}$.
 		Then, the optimal coupling admits the form
@@ -838,11 +839,51 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 		\quad 
 		\mathbb{P}_X\lfloor_{V_i}(dx) = I_{V_i}(x)\,\mathbb{P}_X(dx),
 		\end{align*}
-		where $I_{V_i}$ is the indicator function of $V_i$. Moreover, there exists a constant $C > 0$ such that
-		\begin{align*}
-			\mathrm{diam}(V_i) \leq C n_X^{-1/d} , \quad \forall i = 1,...,n_X .
-		\end{align*}
+		where $I_{V_i}$ is the indicator function of $V_i$.
 	\end{lemma}
+	
+	By \cref{lem:laguerre}, we have
+	\begin{align*}
+		\Phi_n(\pi)(dx \mid Y_j) &= n_Y \sum_{i=1}^{n_X} Q_X(dx \mid X_i) \pi_{ij} \\
+						         &= n_Y \sum_{i=1}^{n_X} \pi_{ij} \Big(n_X \mathbb{P}_X \lfloor V_i (dx)\Big) ,
+	\end{align*}
+	which gives
+	\begin{align*}
+		\mathbb{E}_{\Phi_n(\pi)}(K(X_i,X) \mid Y=Y_j) = n_Y \sum_{i' = 1}^{n_X} \pi_{i'j} \int_{V_{i'}} K(X_i,x) \Big(n_X \mathbb{P}_X(dx)\Big) .
+	\end{align*}
+	Then,
+	\begin{align*}
+		&\left\vert \Gamma_{\pi}(X_i,Y_j) - \Gamma_{\Phi_n(\pi)}(X_i,Y_j) \right\vert \\
+		&\leq n_Xn_Y \sum_{i' = 1}^{n_X} \pi_{i'j} \int_{V_{i'}} \left\vert K(X_i,x) - K(X_i,X_{i'}) \right\vert \mathbb{P}_X(dx) \\
+		&\qquad\qquad\qquad\qquad\qquad\qquad + n_Xn_Y \sum_{j' = 1}^{n_Y} \pi_{ij'} \int_{W_{j'}} \left\vert K(Y_j,y) - K(Y_j,Y_{j'}) \right\vert \mathbb{P}_Y(dy) ,
+	\end{align*}
+	where the second term in the last inequality is obtained by similar technique.
+	
+	Finally, we get
+	\begin{align*}
+		(A) &\leq 2 \sum_{i,j,i'} \pi_{i'j} \int_{V_{i'}} \left\vert K(X_i,x) - K(X_i,X_{i'}) \right\vert \mathbb{P}_X(dx) \\
+			&\leq \frac{2}{n_X} \sum_{i,i'} \int_{V_{i'}} \left\vert K(X_i,x) - K(X_i,X_{i'}) \right\vert \mathbb{P}_X(dx) + \frac{2}{n_Y} \sum_{j,j'} \int_{W_{j'}} \left\vert K(Y_j,y) - K(Y_j,Y_{j'}) \right\vert \mathbb{P}_Y(dy) \\
+			&\leq 2L_{\kappa} \sum_{i' = 1}^{n_X} \int_{V_{i'}} d_S(x,X_{i'}) \mathbb{P}_X(dx) + 2L_{\kappa} \sum_{j' = 1}^{n_Y} \int_{W_{j'}} d_S(y,Y_{j'}) \mathbb{P}_Y(dy) \\
+			&\leq 2L_{\kappa} \left(\sum_{i' = 1}^{n_X} \int_{V_{i'}} d_S(x,X_{i'})^2 \mathbb{P}_X(dx)\right)^{1/2} + 2L_{\kappa} \left(\sum_{j' = 1}^{n_Y} \int_{W_{j'}} d_S(y,Y_{j'})^2 \mathbb{P}_Y(dy)\right)^{1/2} \\
+			&\leq 2L_{\kappa} \left(W_2^{d_S}(\mathbb{P}_X,\hat{\mathbb{P}}_X) + W_2^{d_S}(\mathbb{P}_Y,\hat{\mathbb{P}}_Y)\right) .
+	\end{align*}
+	
+	We now move onto $(B)$:
+	\begin{align*}
+		(B) &\leq 2 \left\vert \int_S\left(\int_S \Gamma_{\Phi_n(\pi)}(x,y) \hat{\mathbb{P}}_Y(dy) \right) (\hat{\mathbb{P}}_X - \mathbb{P}_X)(dx) \right\vert \\
+			&\quad\quad\quad\quad\quad\quad + 2 \left\vert \int_S\left(\int_S \Gamma_{\Phi_n(\pi)}(x,y) \hat{\mathbb{P}}_x(dx) \right) (\hat{\mathbb{P}}_Y - \mathbb{P}_Y)(dy) \right\vert .
+	\end{align*}
+	Similarly, we only bound the first term. Let
+	\begin{align*}
+		\gamma(x) \coloneqq \int_S \Gamma_{\Phi_n(\pi)}(x,y) \hat{\mathbb{P}}_Y(dy) .
+	\end{align*}
+	Then, it follows that
+	\begin{align*}
+		\left\vert \int_S\left(\int_S \Gamma_{\Phi_n(\pi)}(x,y) \hat{\mathbb{P}}_Y(dy) \right) (\hat{\mathbb{P}}_X - \mathbb{P}_X)(dx) \right\vert &= \left\vert \mathbb{E}_{\hat{X} \sim \hat{\mathbb{P}}_X} [\gamma(\hat{X})] - \mathbb{E}_{X \sim \mathbb{P}_X} \left[\gamma(X)\right] \right\vert \\
+		&= \left\vert \int_S (\gamma(\hat{x}) - \gamma(x)) Q_X(dx,d\hat{x}) \right\vert \\
+		&\leq \int_S \left\vert \gamma(\hat{x}) - \gamma(x) \right\vert Q_X(dx,d\hat{x}) .
+	\end{align*}
+	Now we show that $\gamma$ is Lipschitz on $\mathrm{supp}(Q_X)$.
 \end{proof}
 
 %\subsection{Proof for \cref{lem:smooth-loss}}\label{pf:lem:smooth-loss}
