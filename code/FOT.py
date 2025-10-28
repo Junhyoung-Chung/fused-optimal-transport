@@ -15,9 +15,9 @@ def kappa_linear_cutoff(t, k=1.0):
     t = np.asarray(t)
     return np.maximum(0.0, k - t)
 
-def kappa_decreasing_exp(t):
+def kappa_decreasing_exp(t,p=2):
     """Strictly decreasing and bounded (to 1 at t=0): exp(-t**2)."""
-    return np.exp(-t**2)
+    return np.exp(-t**p)
 
 def kappa_increasing_logistic(t):
     """Strictly increasing and bounded in (0,1): exp(t)/(1+exp(t))."""
@@ -61,6 +61,9 @@ def make_distance_kernel_matrix(points, h=1.0, kappa="decreasing_exp", metric="e
             D = pre_D / Dmax
 
     Kh = (1.0 / h) * kappa_fun(D / h)
+    Khmax = float(Kh.max())
+    if Khmax > 0:
+        Kh = Kh / Khmax
 
     return Kh
 
@@ -77,7 +80,7 @@ def fused_convex_objective(pi, C_f, DkX, DkY, alpha):
     B = nX * DkY
     diff = A @ pi - pi @ B
     quad = np.sum(diff * diff)
-    return (1 - alpha) * np.sum(C_f * pi) + (alpha / (2.0 * nX * nY)) * quad
+    return (1 - alpha) * np.sum(C_f * pi) , (alpha / (2.0 * nX * nY)) * quad
 
 def fused_convex_gradient(pi, C_f, DkX, DkY, alpha):
     """
@@ -331,6 +334,9 @@ class ConvexFusedTransport:
             )
         else:
             DkX = self.pre_DX
+            Dmax = float(DkX.max())
+            if Dmax > 0:
+                DkX = DkX / Dmax
 
         if self.pre_DY is None:
             DkY = make_distance_kernel_matrix(
@@ -338,6 +344,9 @@ class ConvexFusedTransport:
             )
         else:
             DkY = self.pre_DY
+            Dmax = float(DkY.max())
+            if Dmax > 0:
+                DkY = DkY / Dmax
 
         # Uniform empirical marginals
         a, b = self._build_uniform_marginals(nX, nY)
@@ -361,8 +370,8 @@ class ConvexFusedTransport:
             self.gap_history_.append(gap)
 
             # Evaluate objective (optional per-iter)
-            obj = fused_convex_objective(pi, C_f, DkX, DkY, self.alpha)
-            self.obj_history_.append(obj)
+            obj_feat, obj_struct = fused_convex_objective(pi, C_f, DkX, DkY, self.alpha)
+            self.obj_history_.append([obj_feat, obj_struct])
 
             # Stopping criterion
             if gap <= self.tol:
