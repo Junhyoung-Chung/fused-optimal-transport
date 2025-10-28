@@ -490,6 +490,18 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 %%% Consistency %%%
 \paragraph{Consistency}
 
+\begin{assumption}
+	$ $
+	\begin{itemize}
+		\item[(A1)] $(S,d_S,\eta)$ is a $d$-dimensional compact Riemannian manifold.
+		\item[(A2)] The density of $X$, defined by $p = d\mathbb{P}_X/d\eta$, is strictly bounded above and below:
+		\begin{align*}
+			0 < p_{\min} \leq p(x) \leq p_{\max} < \infty , \quad p_{\min} \leq p_{\max} .
+		\end{align*}
+		\item[(A3)] $f$ is $L_f$-Lipschitz continuous.
+	\end{itemize}
+\end{assumption}
+
 \begin{theorem}
 	\label{thm:consistency}
 	Let $\hat{\pi}$ be the solution of Algorithm~\ref{alg:proposed-algorithm} with $\alpha > 0$. For any $\varepsilon > 0$, choose the maximum number of iteration $T$ as
@@ -753,7 +765,7 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	
 	Now, define
 	\begin{align*}
-		Q_X \in \argmin_{\pi \in \Pi(\mathbb{P}_X,\hat{\mathbb{P}}_X)} \mathbb{E}_{(X,\hat{X}) \sim Q}\left[\|f(X) - f(\hat{X})\|_2\right] , \quad Q_Y \in \argmin_{\pi \in \Pi(\hat{\mathbb{P}}_Y,\mathbb{P}_Y)} \mathbb{E}_{(\hat{Y},Y) \sim Q}\left[\|f(Y) - f(\hat{Y})\|_2\right] .
+		Q_X \in \argmin_{Q \in \Pi(\mathbb{P}_X,\hat{\mathbb{P}}_X)} \mathbb{E}_{(X,\hat{X}) \sim Q}\left[\|f(X) - f(\hat{X})\|_2\right] , \quad Q_Y \in \argmin_{Q \in \Pi(\hat{\mathbb{P}}_Y,\mathbb{P}_Y)} \mathbb{E}_{(\hat{Y},Y) \sim Q}\left[\|f(Y) - f(\hat{Y})\|_2\right] .
 	\end{align*}
 	Then, by \cref{def:Wasserstein-1}, we get
 	\begin{align*}
@@ -785,10 +797,52 @@ This LAP seeks the hard assignment $P$ that best aligns with the optimal soft co
 	
 	We now analyze the convex surrogate term. For $\pi \in \Pi(\hat{\mathbb{P}}_X,\hat{\mathbb{P}}_Y)$,
 	\begin{align*}
-		\Big\vert \|D_{\hat{\mathbb{P}}_X}^{\kappa} T_{\pi} - T_{\pi} D_{\hat{\mathbb{P}}_Y}^{\kappa} \|_{\mathrm{HS}}^2 - \|D_{\mathbb{P}_X}^{\kappa} T_{\Phi_n(\pi)} - T_{\Phi_n(\pi)} D_{\mathbb{P}_Y}^{\kappa} \|_{\mathrm{HS}}^2 \Big\vert
+		&\Big\vert \|D_{\hat{\mathbb{P}}_X}^{\kappa} T_{\pi} - T_{\pi} D_{\hat{\mathbb{P}}_Y}^{\kappa} \|_{\mathrm{HS}}^2 - \|D_{\mathbb{P}_X}^{\kappa} T_{\Phi_n(\pi)} - T_{\Phi_n(\pi)} D_{\mathbb{P}_Y}^{\kappa} \|_{\mathrm{HS}}^2 \Big\vert \\
+		&= \left\vert \int_S\int_S \Gamma_{\pi}(x,y)^2\hat{\mathbb{P}}_X(dx)\hat{\mathbb{P}}_Y(dy) - \int_S\int_S \Gamma_{\Phi_n(\pi))}(x,y)^2 \mathbb{P}_X(dx)\mathbb{P}_Y(dy) \right\vert \\
+		&\leq \underbrace{\left\vert \int_S\int_S (\Gamma_{\pi}(x,y)^2 - \Gamma_{\Phi_n(\pi))}(x,y)^2)\hat{\mathbb{P}}_X(dx)\hat{\mathbb{P}}_Y(dy) \right\vert}_{\eqqcolon (A)} \\
+		&\qquad\qquad\qquad\qquad\qquad\qquad + \underbrace{\left\vert \int_S\int_S \Gamma_{\Phi_n(\pi))}(x,y)^2 (\hat{\mathbb{P}}_X(dx)\hat{\mathbb{P}}_Y(dy) - \mathbb{P}_X(dx)\mathbb{P}_Y(dy)) \right\vert}_{\eqqcolon (B)} .
 	\end{align*}
 	
-
+	$(A)$ can be further decomposed as
+	\begin{align*}
+		(A) &\leq 2\int_S\int_S \left\vert \Gamma_{\pi}(x,y) - \Gamma_{\Phi_n(\pi))}(x,y) \right\vert \hat{\mathbb{P}}_X(dx)\hat{\mathbb{P}}_Y(dy) \\
+			&= \frac{2}{n_Xn_Y} \sum_{i,j} \left\vert \Gamma_{\pi}(X_i,Y_j) - \Gamma_{\Phi_n(\pi))}(X_i,Y_j) \right\vert .
+	\end{align*}
+	Observe that
+	\begin{align*}
+		&\left\vert \Gamma_{\pi}(X_i,Y_j) - \Gamma_{\Phi_n(\pi))}(X_i,Y_j) \right\vert \\
+		&\leq \left\vert \mathbb{E}_{\pi}(K(X_i,X) \mid Y=Y_j) - \mathbb{E}_{\Phi_n(\pi)}(K(X_i,X) \mid Y=Y_j) \right\vert \\
+		&\qquad\qquad\qquad\qquad\qquad\qquad + \left\vert \mathbb{E}_{\pi}(K(Y_j,Y) \mid X=X_i) - \mathbb{E}_{\Phi_n(\pi)}(K(Y_j,Y) \mid X=X_i) \right\vert .
+	\end{align*}
+	By the symmetry, it suffices to analyze the first term in the last inequality. Note that
+	\begin{align*}
+		\mathbb{E}_{\pi}(K(X_i,X) \mid Y=Y_j) = \frac{1}{n_Y} \sum_{i' = 1}^{n_X} d_S(X_i,X_{i'}) \pi_{ij} .
+	\end{align*}
+	To discuss $\mathbb{E}_{\Phi_n(\pi)}(K(X_i,X) \mid Y=Y_j)$, we first define the followings:
+	\begin{align}
+		\label{eq:closest_Qx}
+		Q_X \in \argmin_{Q \in \Pi(\mathbb{P}_X,\hat{\mathbb{P}}_X)} \mathbb{E}_{(X,\hat{X}) \sim Q}\left[d_S(X,\hat{X})\right] . %, \quad Q_Y \in \argmin_{\pi \in \Pi(\hat{\mathbb{P}}_Y,\mathbb{P}_Y)} \mathbb{E}_{(\hat{Y},Y) \sim Q}\left[d_S(Y,\hat{Y})\right] .
+	\end{align}
+	The following lemma provides the form of $Q_X$.
+	\begin{lemma}
+		Let $Q_X$ be defined as in \eqref{eq:closest_Qx}. 
+		Then, for all $n_X \ge 1$, there exists a collection of measurable sets 
+		$\{V_i : i = 1,\dots,n_X\}$ forming a Laguerre diagram such that
+		\begin{align*}
+			V_i = \{x \in S : d_S(x,X_i) - \psi_i \le d_S(x,X_j) - \psi_j,\;\forall j\} , \quad \mathbb{P}_X(V_i) = 1/n_X, \quad X_i \in V_i,
+		\end{align*}
+		for some $\psi = (\psi_1,\dots,\psi_{n_X}) \in \mathbb{R}^{n_X}$.
+		Then, the optimal coupling admits the form
+		\begin{align*}
+		Q_X = \sum_{i=1}^{n_X} \mathbb{P}_X\lfloor_{V_i} \otimes \delta_{X_i},
+		\quad 
+		\mathbb{P}_X\lfloor_{V_i}(dx) = I_{V_i}(x)\,\mathbb{P}_X(dx),
+		\end{align*}
+		where $I_{V_i}$ is the indicator function of $V_i$. Moreover, there exists a constant $C > 0$ such that
+		\begin{align*}
+			\mathrm{diam}(V_i) \leq C n_X^{-1/d} , \quad \forall i = 1,...,n_X .
+		\end{align*}
+	\end{lemma}
 \end{proof}
 
 %\subsection{Proof for \cref{lem:smooth-loss}}\label{pf:lem:smooth-loss}
