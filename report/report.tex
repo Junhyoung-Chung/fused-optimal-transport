@@ -63,6 +63,8 @@
 \usepackage{subcaption}
 \usepackage{tikz}
 \usepackage{xcolor}
+\usepackage{subcaption}
+\captionsetup[subfigure]{skip=-7pt}
 \usetikzlibrary{calc}
 
 \newtheorem{theorem}{Theorem}
@@ -173,11 +175,41 @@
 
 \section{Introduction}
 
-Optimal transport (OT) provides a powerful mathematical framework for comparing probability measures by quantifying the minimal cost of transporting mass from one distribution to another. In recent years, OT has found wide applications in statistics, machine learning, and computer vision, where distributions often lie on non-Euclidean or structured domains. However, in many real-world problems, each observation possesses both spatial and feature information---for example, geometric shapes with embedded descriptors, or spatially indexed random fields with associated features. In such settings, it is desirable to align not only the feature embeddings but also the underlying spatial structures.
+Optimal transport (OT) is a foundational tool for comparing probability measures by accounting for the cost of moving mass across spaces~\citep{villani2008optimal}. Beyond classical settings where distributions live in Euclidean domains, modern applications in statistics, machine learning, and computer vision routinely involve signals supported on non-Euclidean or structured spaces (e.g., meshes, graphs, manifolds) together with auxiliary features (descriptors). In such problems, meaningful alignment must jointly respect (i) feature correspondence and (ii) the geometry of the underlying domain.
 
-To address this, we consider a \emph{fused optimal transport} (FOT) formulation, which simultaneously accounts for feature similarity and spatial coherence through a kernel-weighted coupling cost. This formulation generalizes both the classical quadratic OT and the Gromov--Wasserstein (GW) transport, providing a flexible interpolation between them. The rest of this section introduces the formal setup, notation, and basic existence results for the fused optimal transport plan.
+A popular way to incorporate geometry is the Gromov--Wasserstein (GW) framework, which matches distributions by comparing within-domain pairwise distances. More recently, the fused GW (FGW) discrepancy~\citep{vayer2020fused} blends feature matching with GW, offering a flexible interpolation. However, the GW term is intrinsically non-convex in the coupling, leading to non-unique minimizers and algorithmic sensitivity to initialization. As a consequence, generic solvers often converge only to stationary points, which complicates both optimization and statistical analysis.
 
-\section{Methodology}
+\paragraph{This paper.}
+We introduce a \emph{convex} formulation of fused optimal transport (FOT) that preserves domain geometry via a kernelized operator discrepancy. Concretely, we replace the non-convex GW component by a convex surrogate built from the distance–kernel operator $D^{\kappa}_{\mathbb{P}_X}$ acting on $L^2(S,\mathbb{P}_X)$, where $K(x,x')=\kappa(d_S(x,x'))$ with a bounded continuous monotone $\kappa$. For a coupling $\pi\in\Pi(\mathbb{P}_X,\mathbb{P}_Y)$ with conditional expectation operator $T_\pi$, our structural penalty is the squared Hilbert–Schmidt norm
+\[
+\big\| D^{\kappa}_{\mathbb{P}_X} T_\pi \;-\; T_\pi D^{\kappa}_{\mathbb{P}_Y}\big\|_{\mathrm{HS}}^2,
+\]
+which vanishes exactly when $T_\pi$ commutes with the distance–kernel operators. Intuitively, this enforces that \emph{distance potentials} are preserved under the coupling, encouraging near-isometries at the level of kernelized geometry. Coupled with a standard feature cost, the overall objective
+\[
+\mathcal{L}(\pi)
+=(1-\alpha)\,\mathbb{E}_{(X,Y)\sim\pi}\!\left[\|f(X)-f(Y)\|_2^2\right]
++\frac{\alpha}{2}\,\big\| D^{\kappa}_{\mathbb{P}_X} T_\pi - T_\pi D^{\kappa}_{\mathbb{P}_Y}\big\|_{\mathrm{HS}}^2
+\]
+is \emph{convex in $\pi$} (\cref{thm:convex-relaxation}). At the sample level this yields a convex quadratic program (\eqref{eq:proposed-method}) that we solve with a projection-free Frank–Wolfe (FW) method and, when desired, post-process via a linear-assignment (LAP) projection to obtain a hard matching (\cref{alg:proposed-algorithm}).
+
+\paragraph{Geometric fidelity.}
+We show that the structural penalty is \emph{isometry-consistent}: if $\pi$ is induced by a measurable injective map $T$ that preserves $d_S$ almost everywhere, then the penalty vanishes; conversely, under a strictly monotone $\kappa$, vanishing penalty implies distance preservation and hence identifies isometries (\cref{prop:solution}). Thus our convex surrogate targets the same structure-preserving maps sought by GW/FGW, but without the non-convex landscape.
+
+\paragraph{Statistical and computational guarantees.}
+Because the objective is convex in the coupling, global optima can be obtained with standard first-order methods, enabling clean finite-sample analysis. We provide a basic consistency result that decomposes the error into an \emph{optimization} part (controlled by FW iterations) and a \emph{statistical} part governed by the empirical OT approximation of the marginals (\cref{thm:consistency}). This separates algorithmic accuracy from sample complexity and clarifies how geometry (via $D^{\kappa}$) interacts with feature noise.
+
+\paragraph{Contributions.}
+\begin{enumerate}
+	\item \textbf{Convex FOT objective.} We propose a kernel-operator surrogate for the GW term and prove convexity of the overall fused objective in the coupling (\cref{thm:convex-relaxation}).
+	\item \textbf{Isometry consistency.} We establish that the surrogate vanishes precisely on isometries (and only on them under strictly monotone $\kappa$), aligning with the geometric aims of GW while avoiding non-convexity (\cref{prop:solution}).
+	\item \textbf{Scalable solver with guarantees.} We give a simple Frank–Wolfe algorithm for the empirical convex QP, with an optional LAP projection for hard matchings, and derive an optimization-statistical error bound (Algorithm~\ref{alg:proposed-algorithm}, \cref{thm:consistency}).
+	\item \textbf{Empirical validation.} On lattice-structured graph benchmarks with block-aligned features, our method smoothly trades off feature alignment and geometry preservation and exhibits stable convergence, in contrast to the concave behavior of GW along permutation trajectories (cf. the motivating example).
+\end{enumerate}
+
+\paragraph{Organization.}
+\Cref{sec:Methodology} formalizes the kernel-operator construction and proves convexity and isometry consistency. \Cref{sec:Algorithm} presents the empirical QP, FW solver, and LAP projection together with complexity remarks and the optimization–statistical error bound. \Cref{sec:Experiments} reports simulations on lattice block models that stress-test geometric alignment under within-block ambiguity.
+
+\section{Methodology}\label{sec:Methodology}
 
 %%%% Notations %%%%
 \paragraph{Notations.}
@@ -425,7 +457,7 @@ Figure~\ref{fig:motivating-example} visualizes the case when $A \gg B \approx 0$
 Overall, this example highlights the difference between the proposed convex surrogate and the GW penalty. While the GW objective exhibits a concave behavior that often results in extreme solutions (corresponding to permutation-like transport plans), our convex surrogate yields a smooth and well-behaved solution. In particular, the minimizer $t_{\mathrm{CS}}^\ast$ varies continuously with the geometric discrepancy, while ensuring the convexity. This property ensures numerical stability and uniqueness of the solution, making the convex surrogate more suitable for optimization and statistical analysis, especially in complex settings where the GW 
 penalty might fall into suboptimal solutions due to its non-convexity.
 
-\section{Algorithm}
+\section{Algorithm}\label{sec:Algorithm}
 %%% Pseudocode %%%
 \begin{algorithm}[t]
 	\caption{Convex Quadratic Fused Transport Plan via FW and LAP Projection}
@@ -500,8 +532,8 @@ We first state some technical assumptions to provide a convergence rate for our 
 			0 < p_{\min} \leq p_X,p_Y \leq p_{\max} < \infty .
 		\end{align*}
 		\item[(A3)] For each $n_X,n_Y \geq 1$, no sample is replicated, that is, all $X_1,...,X_{n_X}$ and $Y_1,...,Y_{n_Y}$ are distinct, respectively.
-		\item[(A4)] $\kappa$ is $L_\kappa$-Lipschitz continuous.
-		\item[(A5)] $f$ is $L_f$-Lipschitz continuous.
+		%\item[(A4)] $\kappa$ is $L_\kappa$-Lipschitz continuous.
+		\item[(A4)] $f$ is $L_f$-Lipschitz continuous.
 	\end{itemize}
 \end{assumption}
 
@@ -536,6 +568,50 @@ We first state some technical assumptions to provide a convergence rate for our 
 %		\mathbb{P}\left(W_1(\hat{\pi},\pi^\ast) > \varepsilon \right) \leq ...
 %	\end{align*}
 %\end{corollary}
+
+\section{Numerical Experiments}\label{sec:Experiments}
+%%% Intro %%%
+This section provides numerical experiments to empirically validate the main results: (i) the proposed algorithm strikes a balance between minimizing transport costs in feature space and preserving geometry; and (ii) it asymptotically returns a global minimizer of \eqref{eq:proposed-method}.
+
+\paragraph{Data generation.}
+%%% Structure %%%
+We conduct a simulation study generating $100$ instances of lattice-structured objects with clusters. Each simulated instance consists of an undirected graph with $B \in \{2,3,4\}$ latent blocks and $N \in \{B^4, B^5, B^6\}$ nodes.
+To generate ground-truth correspondences with controlled structural similarity, we first sample a lattice block model whose within-block connectivity is organized as a two-dimensional grid.
+Specifically, nodes within each block are arranged on a nearly square lattice and connected via von Neumann (4-neighbor) wiring, while edges between different blocks are added independently with probability $p_{\text{out}} = 0.02$.
+
+%%% Target generation %%%
+To construct the paired graphs $(G_X, G_Y)$, we first generate $G_X$ from the above model, and then apply a block-wise permutation $P_{\text{true}}$ that shuffles node identities within each block and permutes the block order according to
+\begin{align*}
+	b_{\text{target}} \equiv b_{\text{source}} + 1 \pmod B .
+\end{align*}
+The resulting $G_Y = P_{\text{true}}^\top G_X P_{\text{true}}$ thus represents an isomorphism of $G_X$ but with latent correspondences obscured both within and across blocks. Figure~\ref{fig:data-example} shows an example for simulated lattice block models used in the experiments.
+
+%%% Feature %%%
+Each node $i$ is further assigned a feature vector $f_i \in \mathbb{R}^B$ drawn from a $B$-dimensional Gaussian aligned with the block labels: if node $i$ belongs to the $b$-th cluster,
+\begin{align*}
+	f(i) \sim N(e_b,\sigma^2 I_B) , \quad e_b = [0,...0,\underset{\text{$b$-th}}{1},0,...,0]^\top ,
+\end{align*}
+where $\sigma^2 \in \{0,0.01,0.1\}$, so that features are discriminative at the block level but nearly indistinguishable within each block, especially when $\sigma^2$ is small.
+
+\begin{figure}[t]
+	\centering
+	\begin{subfigure}{\textwidth}
+		\includegraphics[width=\textwidth]{../simulation/source_lattice_blocks.png}
+		\caption{Source graph $G_X$ consisting of three lattice-structured blocks ($B=3$, $N=27$).}
+		\label{fig:data-example-source}
+	\end{subfigure}
+	\begin{subfigure}{\textwidth}
+		\includegraphics[width=\textwidth]{../simulation/target_lattice_blocks.png}
+		\caption{Target graph $G_Y$ obtained by applying a within-block shuffling and a cyclic block permutation to $G_X$.}
+		\label{fig:data-example-target}
+	\end{subfigure}
+	\caption{Illustration of simulated lattice block models. The target graph preserves the same global structure as the source but obscures node-wise correspondences both within and across blocks.}
+	\label{fig:data-example}
+\end{figure}
+
+\paragraph{Implementation details.}
+The pairwise feature cost is given by the squared Euclidean distance $C_f(i,j) = \|f(i) - f(j)\|_2^2$, as described in Algorithm~\ref{alg:proposed-algorithm}. To encode structural geometry, 
+
 
 %%% References %%%
 \bibliographystyle{abbrvnat}
@@ -814,7 +890,7 @@ We first state some technical assumptions to provide a convergence rate for our 
 		Then, for all $n_X \ge 1$, there exists a collection of measurable sets 
 		$\{V_i : i = 1,\dots,n_X\}$ forming a Laguerre diagram such that
 		\begin{align*}
-			V_i = \left\{x \in S : \frac{1}{2}d_S(x,X_i)^2 - \psi_i \le \frac{1}{2}d_S(x,X_j)^2 - \psi_j,\;\forall j \right\} , \quad \mathbb{P}_X(V_i) = 1/n_X, \quad X_i \in V_i,
+			V_i = \left\{x \in S : \frac{1}{2}d_S(x,X_i)^2 - \psi_i \le \frac{1}{2}d_S(x,X_j)^2 - \psi_j,\;\forall j \right\} , \quad \mathbb{P}_X(V_i) = \frac{1}{n_X} ,
 		\end{align*}
 		for some $\psi = (\psi_1,\dots,\psi_{n_X}) \in \mathbb{R}^{n_X}$.
 		Then, the optimal coupling admits the form
@@ -825,6 +901,9 @@ We first state some technical assumptions to provide a convergence rate for our 
 		\end{align*}
 		where $I_{V_i}$ is the indicator function of $V_i$.
 	\end{lemma}
+	\begin{proof}
+		See details in \cite{peyre2019computational,kitagawa2019convergence,santambrogio2015optimal}.
+	\end{proof}
 	
 	By \cref{lem:laguerre}, we have
 	\begin{align*}
