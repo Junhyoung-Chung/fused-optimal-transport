@@ -64,7 +64,7 @@
 \usepackage{tikz}
 \usepackage{xcolor}
 \usepackage{subcaption}
-\captionsetup[subfigure]{skip=-7pt}
+\captionsetup[subfigure]{skip=0pt}
 \usetikzlibrary{calc}
 
 \newtheorem{theorem}{Theorem}
@@ -575,12 +575,12 @@ This section provides numerical experiments to empirically validate the main res
 
 \subsection{Empirical Evidence}
 
-\subsection{Comparison to FGW Method}
+\subsection{Comparison to the FGW Method}
 In this section, we aim to demonstrate the performance of our proposed algorithm~\eqref{eq:proposed-method} compared to the FGW method~\eqref{eq:pi-fused-ot} with graph data.
 
 \paragraph{Data generation.}
 %%% Structure %%%
-We conduct a simulation study generating $100$ instances of lattice-structured objects with clusters. Each simulated instance consists of an undirected graph with $B \in \{2,3,4\}$ latent blocks and $N \in \{B^3, B^5, B^7\}$ nodes.
+We conduct a simulation study generating $100$ instances of lattice-structured objects with clusters. Each simulated instance consists of an undirected graph with $B \in \{2,3,4\}$ latent blocks and $N = B^{2B-1}$ nodes.
 To generate ground-truth correspondences with controlled structural similarity, we first sample a lattice block model whose within-block connectivity is organized as a two-dimensional grid.
 Specifically, nodes within each block are arranged on a nearly square lattice and connected via von Neumann (4-neighbor) wiring, while edges between different blocks are added independently with probability $p_{\text{out}} = 0.02$.
 
@@ -638,8 +638,33 @@ In practice, $K_t$ can be efficiently approximated by a second order Taylor expa
 which preserves locality while maintaining computational tractability. We should note that the heat kernel is not a distance; however, it is widely used in practice as a similarity measure that reflects both local connectivity and global diffusion properties of the graph. Compared to the geodesic distance, which captures discrete shortest-path relations, the heat kernel encodes continuous multi-scale interactions between nodes and is particularly effective for capturing smooth structural correspondences.
 
 %%% Hyperparameter %%%
-The following outlines the hyperparameter and implementation settings used throughout our experiments. For the weight parameter, we set $\alpha \in \{0,0.25,0.5,0.75,1\}$ for both methods. 
+The following outlines the hyperparameter and implementation settings used throughout our experiments. For the weight parameter, we set $\alpha \in \{0,0.5,1\}$ for both methods. 
 We fix the number of iterations at $T=100$ across all settings. We report performance based on the estimator $\hat{P}$, and, for comparison, we use the \texttt{gromov.fused\_gromov\_wasserstein} function provided in the \texttt{POT} library (Python) to implement the FGW method.
+
+\paragraph{Results.}
+\begin{table}[t]
+	\centering
+	\small
+	\begin{tabular}{cccccccccc}
+		\toprule
+		& & \multicolumn{4}{c}{Geodesic-Gaussian} & \multicolumn{4}{c}{Heat} \\
+		\cmidrule(lr){3-6} \cmidrule(lr){7-10}
+		$\sigma^2$ & $\alpha = 0$ &
+		\multicolumn{2}{c}{$\alpha=0.5$} & \multicolumn{2}{c}{$\alpha=1$} &
+		\multicolumn{2}{c}{$\alpha=0.5$} & \multicolumn{2}{c}{$\alpha=1$} \\
+		\cmidrule(lr){3-4} \cmidrule(lr){5-6} \cmidrule(lr){7-8} \cmidrule(lr){9-10}
+		& & \textbf{Ours} & FGW & \textbf{Ours} & FGW & \textbf{Ours} & FGW & \textbf{Ours} & FGW \\
+		\midrule
+		0 & 0.01 & 1.00 & 0.99 & 1.00 & 0.99 & 1.00 & 0.01 & 0.00 & 0.01 \\
+		1 & 1.00 & 1.00 & 1.00 & 1.00 & 0.97 & 1.00 & 1.00 & 0.00 & 0.01 \\
+		\bottomrule
+	\end{tabular}
+	\vspace{4mm}
+	\caption{Mean node-level matching accuracy over 10 runs. 
+		Each pair of columns reports the results for our convex formulation (\textbf{Ours}) and the FGW baseline under different $\alpha$ values and kernels. 
+		The $\alpha=0$ column represents the shared structural baseline.}
+	\label{tab:comparison}
+\end{table}
 
 
 %%% References %%%
