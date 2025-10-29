@@ -479,7 +479,7 @@ penalty might fall into suboptimal solutions due to its non-convexity.
 		\State $\pi^{(t+1)} \gets (1-\gamma_t)\pi^{(t)} + \gamma_t \tilde{\pi}^{(t)}$ for some $0 < \gamma_t < 1$
 		\EndFor
 		\State $\hat\pi \gets \pi^{(T)}$
-		\State \textbf{Optional (LAP projection):} $\displaystyle
+		\State \textbf{Optional (LAP):} $\displaystyle
 		\hat P \gets \arg\max_{P \in \mathcal{P}} \mathrm{Tr}(P^\top \hat\pi)$, where $\mathcal{P}$ is as defined in \eqref{eq:assign-matrix-space}
 		\State \textbf{Return:} $\hat\pi$ (and optionally $\hat P$)
 	\end{algorithmic}
@@ -571,11 +571,16 @@ We first state some technical assumptions to provide a convergence rate for our 
 
 \section{Numerical Experiments}\label{sec:Experiments}
 %%% Intro %%%
-This section provides numerical experiments to empirically validate the main results: (i) the proposed algorithm strikes a balance between minimizing transport costs in feature space and preserving geometry; and (ii) it asymptotically returns a global minimizer of \eqref{eq:proposed-method}.
+This section provides numerical experiments to empirically validate the main results: (i) the proposed algorithm asymptotically returns a global minimizer of \eqref{eq:proposed-method}; and (ii) it provides a compelling estimator that strikes a balance between minimizing transport costs in feature space and preserving geometry.
+
+\subsection{Empirical Evidence}
+
+\subsection{Comparison to FGW Method}
+In this section, we aim to demonstrate the performance of our proposed algorithm~\eqref{eq:proposed-method} compared to the FGW method~\eqref{eq:pi-fused-ot} with graph data.
 
 \paragraph{Data generation.}
 %%% Structure %%%
-We conduct a simulation study generating $100$ instances of lattice-structured objects with clusters. Each simulated instance consists of an undirected graph with $B \in \{2,3,4\}$ latent blocks and $N \in \{B^4, B^5, B^6\}$ nodes.
+We conduct a simulation study generating $100$ instances of lattice-structured objects with clusters. Each simulated instance consists of an undirected graph with $B \in \{2,3,4\}$ latent blocks and $N \in \{B^3, B^5, B^7\}$ nodes.
 To generate ground-truth correspondences with controlled structural similarity, we first sample a lattice block model whose within-block connectivity is organized as a two-dimensional grid.
 Specifically, nodes within each block are arranged on a nearly square lattice and connected via von Neumann (4-neighbor) wiring, while edges between different blocks are added independently with probability $p_{\text{out}} = 0.02$.
 
@@ -591,7 +596,7 @@ Each node $i$ is further assigned a feature vector $f_i \in \mathbb{R}^B$ drawn 
 \begin{align*}
 	f(i) \sim N(e_b,\sigma^2 I_B) , \quad e_b = [0,...0,\underset{\text{$b$-th}}{1},0,...,0]^\top ,
 \end{align*}
-where $\sigma^2 \in \{0,0.01,0.1\}$, so that features are discriminative at the block level but nearly indistinguishable within each block, especially when $\sigma^2$ is small.
+where $\sigma^2 \in \{0,0.001,1\}$, so that features are discriminative at the block level but nearly indistinguishable within each block, especially when $\sigma^2$ is small.
 
 \begin{figure}[t]
 	\centering
@@ -610,7 +615,31 @@ where $\sigma^2 \in \{0,0.01,0.1\}$, so that features are discriminative at the 
 \end{figure}
 
 \paragraph{Implementation details.}
-The pairwise feature cost is given by the squared Euclidean distance $C_f(i,j) = \|f(i) - f(j)\|_2^2$, as described in Algorithm~\ref{alg:proposed-algorithm}. To encode structural geometry, 
+The pairwise feature cost is defined by the squared Euclidean distance $C_f(i,j) = \|f(i) - f(j)\|_2^2$, as specified in Algorithm~\ref{alg:proposed-algorithm}. To encode structural geometry, we employ two complementary metrics: the geodesic distance and the heat kernel. 
+
+%%% Geodesic distance %%%
+The geodesic distance between nodes $i$ and $j$ is defined as the length of the shortest path connecting them:
+\begin{align*}
+	d_{G}(i,j) \coloneqq \min_{\xi: i \leadsto j} |\xi| ,
+\end{align*}
+where $\xi : i \leadsto j$ denotes a path from $i$ to $j$, and $|\xi|$ denotes the number of edges contained in that path. For the geodesic distance, we use a standard Gaussian kernel $\kappa(x) = \exp(-x^2)$, i.e., $K_G(i,j) = \exp(-d_G(i,j)^2)$.
+
+%%% Heat kernel %%%
+The heat kernel provides a smooth diffusion-based measure of proximity that captures multi-scale structural relationships. Given the graph Laplacian $L = D - G$, where $G \in \{0,1\}^{n \times n}$ is the adjacency matrix and $D = \mathrm{diag}(G \mathbf{1}_n)$ is the degree matrix, 
+the heat kernel at time scale $t > 0$ is defined by
+\begin{align*}
+	K_t \coloneqq e^{-tL} ,
+\end{align*}
+so that $K_H(i,j ; t) \coloneqq [K_t]_{ij}$ represents the amount of heat transferred from node $i$ to node $j$ after diffusion time $t$. In our experiments, we fix at $t=1$.
+In practice, $K_t$ can be efficiently approximated by a second order Taylor expansion:
+\begin{align*}
+	K_t \approx I - tL + \tfrac{1}{2}t^2L^2 ,
+\end{align*}
+which preserves locality while maintaining computational tractability. We should note that the heat kernel is not a distance; however, it is widely used in practice as a similarity measure that reflects both local connectivity and global diffusion properties of the graph. Compared to the geodesic distance, which captures discrete shortest-path relations, the heat kernel encodes continuous multi-scale interactions between nodes and is particularly effective for capturing smooth structural correspondences.
+
+%%% Hyperparameter %%%
+The following outlines the hyperparameter and implementation settings used throughout our experiments. For the weight parameter, we set $\alpha \in \{0,0.25,0.5,0.75,1\}$ for both methods. 
+We fix the number of iterations at $T=100$ across all settings. We report performance based on the estimator $\hat{P}$, and, for comparison, we use the \texttt{gromov.fused\_gromov\_wasserstein} function provided in the \texttt{POT} library (Python) to implement the FGW method.
 
 
 %%% References %%%
