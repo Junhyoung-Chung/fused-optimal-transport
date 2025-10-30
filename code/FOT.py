@@ -178,6 +178,11 @@ class ConvexFusedTransport:
     pre_Cf : pre-computed feature cost.
     pre_DX : pre-computed distance matrix of X.
     pre_DY : pre-computed distance matrix of Y.
+    verbose : int, default=0
+        Verbosity level controlling optimization logging:
+          - 0 : silent mode (no output)
+          - 1 : progress printed every 10 iterations and at convergence
+          - 2 : detailed log every iteration (gap, objective components)
     """
     def __init__(self,
                  alpha=0.5,
@@ -191,7 +196,8 @@ class ConvexFusedTransport:
                  random_state=None,
                  pre_Cf=None,
                  pre_DX=None,
-                 pre_DY=None):
+                 pre_DY=None,
+                 verbose=0):
         self.alpha = alpha
         self.h = h
         self.kappa = kappa
@@ -204,6 +210,7 @@ class ConvexFusedTransport:
         self.pre_Cf = pre_Cf
         self.pre_DX = pre_DX
         self.pre_DY = pre_DY
+        self.verbose = verbose
 
         # learned attributes
         self.pi_ = None
@@ -364,30 +371,30 @@ class ConvexFusedTransport:
 
         # Frank–Wolfe loop
         for t in range(1, self.fw_max_iter + 1):
-            # Gradient at current pi
             grad = fused_convex_gradient(pi, C_f, DkX, DkY, self.alpha)
-
-            # Linear Minimization Oracle: s = argmin_{π∈U(a,b)} <grad, π>
             s = lmo_transport_on_polytope(grad, a, b, method=self.lmo_method)
 
-            # Dual gap g_t = <∇L(pi), pi - s>
             gap = np.sum(grad * (pi - s))
             self.gap_history_.append(gap)
 
-            # Evaluate objective (optional per-iter)
             obj_feat, obj_struct = fused_convex_objective(pi, C_f, DkX, DkY, self.alpha)
             self.obj_history_.append([obj_feat, obj_struct])
 
-            # Stopping criterion
+            # === Verbose logging ===
+            if self.verbose >= 2:
+                print(f"[Iter {t:03d}] gap={gap:.3e} "
+                      f"obj_feat={obj_feat:.3e} obj_struct={obj_struct:.3e}")
+            elif self.verbose == 1 and (t % 10 == 0 or gap <= self.tol):
+                print(f"[Iter {t:03d}] gap={gap:.3e}")
+
+            # stopping criterion
             if gap <= self.tol:
-                # one last objective at final pi
+                if self.verbose:
+                    print(f"Converged at iteration {t} with gap={gap:.3e}")
                 break
 
-            # Stepsize
             gamma = self._stepsize(t, pi, s, C_f, DkX, DkY)
             gamma = float(np.clip(gamma, 1e-12, 1.0))
-
-            # Update
             pi = (1.0 - gamma) * pi + gamma * s
 
         self.pi_ = pi
@@ -404,4 +411,7 @@ class ConvexFusedTransport:
             "nX": nX, "nY": nY, "alpha": self.alpha, "h": self.h,
             "kappa": self.kappa if isinstance(self.kappa, str) else getattr(self.kappa, "__name__", "callable")
         }
+
+        if self.verbose:
+            print("Optimization finished.")
         return self
