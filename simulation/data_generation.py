@@ -272,38 +272,129 @@ def perm_matrix(perm):
     return P
 
 
-def heat_kernel_from_adj(A, t=1.0, normalize=True, order=2):
-    """
-    Approximate the heat kernel exp(-tL) using a truncated Taylor expansion.
+import numpy as np
+from scipy.sparse import csr_matrix
+from scipy.sparse.csgraph import laplacian
+from scipy.linalg import expm
 
-    Parameters
-    ----------
-    A : ndarray
-        Adjacency matrix.
-    t : float
-        Diffusion time parameter.
-    normalize : bool
-        If True, normalize rows/columns to ensure unit diagonal mass.
-    order : int
-        Approximation order (1 or 2).
+# ------------------------------------------------------------
+# 1) Heat kernel from adjacency with choice of Laplacian
+#    - lap='rw'  : random-walk L_rw = I - D^{-1}A (row-stochastic expm)
+#    - lap='sym' : symmetric L_sym = I - D^{-1/2} A D^{-1/2} (symmetric kernel)
+#    - lap='comb': combinatorial L = D - A (not probability-preserving)
+#    method='taylor' uses 1st/2nd order truncation; 'expm' uses matrix expm
+# ------------------------------------------------------------
+def heat_kernel_from_adj(
+    A, t=1.0, lap='rw', method='taylor', order=2, renormalize=True
+):
+    A = np.asarray(A, dtype=float)
+    n = A.shape[0]
+    d = A.sum(axis=1)
+    D = np.diag(d + 1e-12)  # avoid division by zero
 
-    Returns
-    -------
-    K : ndarray
-        Heat kernel matrix.
-    """
-    L = laplacian(csr_matrix(A), normed=False).toarray()
-    I = np.eye(A.shape[0])
-    if order == 2:
-        K = I - t * L + 0.5 * (t ** 2) * (L @ L)
+    if lap == 'rw':
+        # L_rw = I - D^{-1} A
+        L = np.eye(n) - np.linalg.solve(D, A)  # D^{-1}A
+    elif lap == 'sym':
+        # L_sym = I - D^{-1/2} A D^{-1/2}
+        Dmh = np.diag(1.0 / np.sqrt(d + 1e-12))
+        L = np.eye(n) - (Dmh @ A @ Dmh)
+    elif lap == 'comb':
+        # L = D - A
+        L = D - A
     else:
-        K = I - t * L
+        raise ValueError("lap must be one of {'rw','sym','comb'}")
 
-    if normalize:
-        d = K.sum(1, keepdims=True)
-        d = np.clip(d, 1e-8, None)
-        K = K / np.sqrt(d @ d.T)
+    I = np.eye(n)
+    if method == 'expm':
+        K = expm(-t * L)
+    else:
+        # truncated Taylor: exp(-tL) ≈ I - tL + (t^2/2) L^2
+        if order == 2:
+            K = I - t * L + 0.5 * (t ** 2) * (L @ L)
+        elif order == 1:
+            K = I - t * L
+        else:
+            raise ValueError("order must be 1 or 2 for method='taylor'")
+
+    # Stochastic / symmetry housekeeping
+    if lap == 'rw':
+        # Row sums should be 1 for exact expm; after truncation, fix small drift.
+        if renormalize:
+            row_sum = K.sum(axis=1, keepdims=True)
+            row_sum = np.clip(row_sum, 1e-12, None)
+            K = K / row_sum
+    elif lap == 'sym':
+        # Ensure symmetry (numerical safety)
+        K = 0.5 * (K + K.T)
+
     return K
+
+
+# ------------------------------------------------------------
+# 2) Diffusion distance D_t:
+#    D_t(x,y) = || p_x - p_y ||_{L2(pi^{-1})},  p_x = K(x,·)
+#    - For lap='rw', stationary pi ∝ degree; rows of K sum to 1.
+#    - We compute pairwise distances efficiently by a whitening diag(1/sqrt(pi)).
+# ------------------------------------------------------------
+def diffusion_distance_matrix(K, pi=None):
+    """
+    K : (n,n) heat kernel, preferably from lap='rw' so rows are distributions.
+    pi: (n,) stationary distribution; default = row-stationary (uniformize by row-sums or degree-proxy).
+        Recommended on graphs: pi_i = degree_i / sum(degree).
+    Returns: D (n,n) with D[i,j] = D_t(i,j)
+    """
+    n = K.shape[0]
+    if pi is None:
+        # If K is from L_rw and renormalized, each row sums to 1 → empirical stationary can be taken as left eigenvector.
+        # Practical proxy: use the average row (uniform) or degree-proportional if available.
+        # Here we infer pi by the (normalized) left stationary of K via row-averaging:
+        pi = K.mean(axis=0)  # simple, robust proxy
+    pi = np.asarray(pi, dtype=float).reshape(-1)
+    pi = pi / np.clip(pi.sum(), 1e-12, None)
+    W = np.diag(1.0 / np.sqrt(pi + 1e-12))
+
+    X = K @ W                    # rows: p_x weighted by 1/sqrt(pi)
+    sqnorm = np.sum(X * X, axis=1, keepdims=True)
+    G = X @ X.T                  # Gram
+    D2 = np.clip(sqnorm + sqnorm.T - 2 * G, 0.0, None)
+    return np.sqrt(D2)
+
+
+# ------------------------------------------------------------
+# 3) RKHS distance d_t from kernel (PD):
+#    d_t(x,y) = sqrt( K(x,x) + K(y,y) - 2K(x,y) )
+#    - Use a symmetric PD kernel; with lap='sym' this holds naturally.
+#    - If K is not perfectly symmetric due to numerics, we symmetrize.
+# ------------------------------------------------------------
+def rkhs_distance_matrix_from_kernel(K, force_sym=True):
+    if force_sym:
+        K = 0.5 * (K + K.T)
+    diag = np.diag(K).reshape(-1, 1)
+    D2 = np.clip(diag + diag.T - 2.0 * K, 0.0, None)
+    return np.sqrt(D2)
+
+
+# ------------------------------------------------------------
+# 4) Convenience wrappers to get both distances from A
+# ------------------------------------------------------------
+def diffusion_and_rkhs_distances(
+    A, t=1.0, method='taylor', order=2, pi=None
+):
+    """
+    Returns:
+      D_diff : diffusion distance matrix (using lap='rw')
+      D_rkhs : RKHS distance matrix (using lap='sym')
+    """
+    # Diffusion distance: random-walk Laplacian heat kernel
+    K_rw = heat_kernel_from_adj(A, t=t, lap='rw', method=method, order=order, renormalize=True)
+    D_diff = diffusion_distance_matrix(K_rw, pi=pi)
+
+    # RKHS distance: symmetric heat kernel
+    K_sym = heat_kernel_from_adj(A, t=t, lap='sym', method=method, order=order, renormalize=False)
+    D_rkhs = rkhs_distance_matrix_from_kernel(K_sym, force_sym=True)
+
+    return D_diff, D_rkhs
 
 
 def all_pairs_geodesic(A, weighted=False):
