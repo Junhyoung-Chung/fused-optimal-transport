@@ -625,7 +625,7 @@ The geodesic distance $d_G$ measures the length of the shortest path between nod
 %%% Hyperparameters and initialization %%%
 Unless otherwise stated, we set the fusion weight to $\alpha \in \{0, 0.5, 1\}$ for all methods and fix the number of iterations to $T = 100$. We report performance using $\hat{P}$ obtained by solving the LAP. To study sensitivity to the starting point, we consider two initializations of the transport plan:
 (i) a fully random doubly-stochastic initialization, and
-(ii) the outer product of empirical marginals (uniform in our setting), i.e., $\pi^{(0)} = \hat{\mathbb{P}}_X \otimes \hat{\mathbb{P}}_Y$. For the FGW baseline we use the \texttt{gromov.fused\_gromov\_wasserstein} function from the \texttt{POT} Python library, with the same $(\sigma^2, \alpha)$ configuration.
+(ii) the outer product of empirical marginals (uniform in our setting), i.e., $\pi^{(0)} = \hat{\mathbb{P}}_X \otimes \hat{\mathbb{P}}_Y$. For the FGW baseline we use the \texttt{gromov.fused\_gromov\_wasserstein} function from the \texttt{POT} Python library.
 
 \paragraph{Results.}
 \begin{table}[t]
@@ -674,7 +674,7 @@ Unless otherwise stated, we set the fusion weight to $\alpha \in \{0, 0.5, 1\}$ 
 \end{table}
 
 %%% Independent initialization %%%
-Table~\ref{tab:comparison_independent} shows the results when both methods are initialized by the independent product coupling $\hat{\mathbb{P}}_X \otimes  \hat{\mathbb{P}}_Y$. Under this initialization, both the proposed algorithm and the FGW solver converge to the correct correspondence across all configurations. Because the graphs are perfectly isomorphic and the initialization is unbiased, the optimization landscape remains symmetric, allowing both methods to achieve the global optimum regardless of the kernel type or feature variance~$\sigma^2$. This serves as a sanity check confirming that the proposed convex relaxation faithfully recovers the true matching in well-conditioned cases, while producing solutions identical to the FGW objective whenever the latter attains its global minimum.
+Table~\ref{tab:comparison_independent} shows the results when both methods are initialized by the independent product coupling $\hat{\mathbb{P}}_X \otimes \hat{\mathbb{P}}_Y$. Under this initialization, both the proposed algorithm and the FGW solver converge to the correct correspondence across all settings. This behavior can be understood in light of the illustration provided in Figure~\ref{fig:motivating-example}: although the GW objective is non-convex and typically exhibits a concave trajectory that drives the solution toward one of its extreme points, the initialization here happens to lie symmetrically between competing optima. Consequently, the solver descends directly to the correct permutation rather than being trapped in an opposite extreme. From a theoretical perspective, this is a rather intriguing observation—despite the inherent non-convexity of the FGW formulation, the outer-product initialization empirically leads to globally optimal transport plans in these perfectly isomorphic graph settings. We leave a deeper understanding of this phenomenon and its potential connections to the geometry of the FGW landscape as an interesting direction for future research. In contrast, our convex formulation arrives at the same solution deterministically, without relying on such a fortuitous starting configuration.
 
 \begin{table}[t]
 	\centering
@@ -722,7 +722,7 @@ Table~\ref{tab:comparison_independent} shows the results when both methods are i
 \end{table}
 
 %%% Random initialization %%%
-Table~\ref{tab:comparison-random} summarizes the results when the transport plan is initialized randomly. In this setting, our convex formulation consistently attains perfect node-level recovery across all $\alpha$ and kernel choices, whereas the FGW solver exhibits severe degradation—particularly under diffusion and RKHS distances, and when the feature variance~$\sigma^2$ is small. These results highlight the key advantage of the proposed approach: the convex objective eliminates spurious local minima that hinder the non-convex FGW optimization, thereby ensuring robustness to initialization and stable convergence even when structural cues dominate the feature information.
+Table~\ref{tab:comparison-random} summarizes the results when the transport plan is initialized randomly. Not surprisingly, our algorithm achieves perfect node-level recovery across all $\alpha$ and kernel choices, maintaining its accuracy even when the feature information is uninformative within each block ($\sigma^2=0$). The FGW solver, however, exhibits large performance drops—most notably under diffusion and RKHS distances—confirming its vulnerability to initialization. These results empirically support the theoretical insight from Figure~\ref{fig:motivating-example}: the non-convex GW penalty tends to fall into one of several extreme local minima, producing nearly permutation-like but incorrect couplings, whereas the convex surrogate provides a smooth, well-behaved objective that guarantees convergence to a unique global solution. This robustness to initialization demonstrates the principal practical advantage of our convex approach over classical FGW.
 
 
 
