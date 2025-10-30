@@ -23,6 +23,7 @@ venv
 *.Rhistory
 
 # data
+realdata/KKI
 realdata/MPI-FAUST
 realdata/*.csv
 realdata/*.xls
