@@ -282,7 +282,7 @@ class ConvexFusedTransport:
             return 2.0 / (t + 2.0)
 
     def fit(self, X, Y, FX=None, FY=None,
-            return_hard_assignment=False):
+            return_hard_assignment=False, init=None):
         """
         Fit the CQFT plan between samples X and Y.
 
@@ -296,6 +296,8 @@ class ConvexFusedTransport:
             Features f(X_i). If None, uses X (identity as features).
         FY : (nY, df) array or None
             Features f(Y_j). If None, uses Y (identity as features).
+        init : (nX, nY) array or None
+            Initial coupling used to warm-start the optimization
 
         Returns
         -------
@@ -351,8 +353,11 @@ class ConvexFusedTransport:
         # Uniform empirical marginals
         a, b = self._build_uniform_marginals(nX, nY)
 
-        # Initialize π^(0) = a b^T (independent coupling)
-        pi = np.outer(a, b)
+        if init is None:
+            # Initialize π^(0) = a b^T (independent coupling)
+            pi = np.outer(a, b)
+        else:
+            pi = init
 
         self.obj_history_.clear()
         self.gap_history_.clear()
