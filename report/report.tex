@@ -470,7 +470,8 @@ penalty might fall into suboptimal solutions due to its non-convexity.
 		$(\hat{D}_X^{\kappa})_{ii'} \gets K(X_i,X_{i'})$, \quad
 		$(\hat{D}_Y^{\kappa})_{jj'} \gets K(Y_j,Y_{j'})$
 		
-		\State Initialize $\pi^{(0)} \gets \hat{\mathbb{P}}_X \otimes \hat{\mathbb{P}}_Y$
+		%\State Initialize $\pi^{(0)} \gets \hat{\mathbb{P}}_X \otimes \hat{\mathbb{P}}_Y$
+		\State Initialize $\pi^{(0)}$
 		
 		\For{$t=0,...,T-1$}
 		%\State $\nabla F(\pi^{(t)}) \gets C_f + \frac{\lambda}{n_X n_Y}\!\left[A^\top(A\pi^{(t)}-\pi^{(t)}B) - (A\pi^{(t)}-\pi^{(t)}B)B^\top\right]$
@@ -481,7 +482,7 @@ penalty might fall into suboptimal solutions due to its non-convexity.
 		\State $\hat\pi \gets \pi^{(T)}$
 		\State \textbf{Optional (LAP):} $\displaystyle
 		\hat P \gets \arg\max_{P \in \mathcal{P}} \mathrm{Tr}(P^\top \hat\pi)$, where $\mathcal{P}$ is as defined in \eqref{eq:assign-matrix-space}
-		\State \textbf{Return:} $\hat\pi$ (and optionally $\hat P$)
+		\State \textbf{Return:} $\hat\pi$ (and optionally $\hat{P}$)
 	\end{algorithmic}
 \end{algorithm}
 
@@ -615,56 +616,114 @@ where $\sigma^2 \in \{0,0.001,1\}$, so that features are discriminative at the b
 \end{figure}
 
 \paragraph{Implementation details.}
-The pairwise feature cost is defined by the squared Euclidean distance $C_f(i,j) = \|f(i) - f(j)\|_2^2$, as specified in Algorithm~\ref{alg:proposed-algorithm}. To encode structural geometry, we employ two complementary metrics: the geodesic distance and the heat kernel. 
+The pairwise feature cost is defined by the squared Euclidean distance $C_f(i,j) = \|f(i) - f(j)\|_2^2$, as specified in Algorithm~\ref{alg:proposed-algorithm}.
+To encode structural geometry, we consider three complementary graph-based distances: (i) the geodesic distance, (ii) a diffusion distance based on the random-walk heat kernel, and (iii) an RKHS distance induced by the symmetric heat kernel. For pair comparison, we set $\kappa(x) = x$ for the proposed algorithm.
 
-%%% Geodesic distance %%%
-The geodesic distance between nodes $i$ and $j$ is defined as the length of the shortest path connecting them:
-\begin{align*}
-	d_{G}(i,j) \coloneqq \min_{\xi: i \leadsto j} |\xi| ,
-\end{align*}
-where $\xi : i \leadsto j$ denotes a path from $i$ to $j$, and $|\xi|$ denotes the number of edges contained in that path. For the geodesic distance, we use a standard Gaussian kernel $\kappa(x) = \exp(-x^2)$, i.e., $K_G(i,j) = \exp(-d_G(i,j)^2)$.
+%%% Distances %%%
+The geodesic distance $d_G$ measures the length of the shortest path between nodes $i$ and $j$. The diffusion distance $d_{\mathrm{diff},t}$ is computed from the random-walk heat kernel $K_{\mathrm{rw},t} = \exp(-tL_{\mathrm{rw}})$, which captures multi-step diffusion connectivity. The RKHS distance $d_{\mathrm{rkhs},t}$ is defined from the symmetric heat kernel $K_{\mathrm{sym},t} = \exp(-tL_{\mathrm{sym}})$ and reflects smooth, global interactions. In all experiments we fix the diffusion scale to $t=1$ and approximate $\exp(-tL)$ by a second-order Taylor expansion for computational efficiency.
 
-%%% Heat kernel %%%
-The heat kernel provides a smooth diffusion-based measure of proximity that captures multi-scale structural relationships. Given the graph Laplacian $L = D - G$, where $G \in \{0,1\}^{n \times n}$ is the adjacency matrix and $D = \mathrm{diag}(G \mathbf{1}_n)$ is the degree matrix, 
-the heat kernel at time scale $t > 0$ is defined by
-\begin{align*}
-	K_t \coloneqq e^{-tL} ,
-\end{align*}
-so that $K_H(i,j ; t) \coloneqq [K_t]_{ij}$ represents the amount of heat transferred from node $i$ to node $j$ after diffusion time $t$. In our experiments, we fix at $t=1$.
-In practice, $K_t$ can be efficiently approximated by a second order Taylor expansion:
-\begin{align*}
-	K_t \approx I - tL + \tfrac{1}{2}t^2L^2 ,
-\end{align*}
-which preserves locality while maintaining computational tractability. We should note that the heat kernel is not a distance; however, it is widely used in practice as a similarity measure that reflects both local connectivity and global diffusion properties of the graph. Compared to the geodesic distance, which captures discrete shortest-path relations, the heat kernel encodes continuous multi-scale interactions between nodes and is particularly effective for capturing smooth structural correspondences.
-
-%%% Hyperparameter %%%
-The following outlines the hyperparameter and implementation settings used throughout our experiments. For the weight parameter, we set $\alpha \in \{0,0.5,1\}$ for both methods. 
-We fix the number of iterations at $T=100$ across all settings. We report performance based on the estimator $\hat{P}$, and, for comparison, we use the \texttt{gromov.fused\_gromov\_wasserstein} function provided in the \texttt{POT} library (Python) to implement the FGW method.
+%%% Hyperparameters and initialization %%%
+Unless otherwise stated, we set the fusion weight to $\alpha \in \{0, 0.5, 1\}$ for all methods and fix the number of iterations to $T = 100$. We report performance using $\hat{P}$ obtained by solving the LAP. To study sensitivity to the starting point, we consider two initializations of the transport plan:
+(i) a fully random doubly-stochastic initialization, and
+(ii) the outer product of empirical marginals (uniform in our setting), i.e., $\pi^{(0)} = \hat{\mathbb{P}}_X \otimes \hat{\mathbb{P}}_Y$. For the FGW baseline we use the \texttt{gromov.fused\_gromov\_wasserstein} function from the \texttt{POT} Python library, with the same $(\sigma^2, \alpha)$ configuration.
 
 \paragraph{Results.}
 \begin{table}[t]
 	\centering
-	\small
-	\begin{tabular}{cccccccccc}
-		\toprule
-		& & \multicolumn{4}{c}{Geodesic-Gaussian} & \multicolumn{4}{c}{Heat} \\
-		\cmidrule(lr){3-6} \cmidrule(lr){7-10}
-		$\sigma^2$ & $\alpha = 0$ &
-		\multicolumn{2}{c}{$\alpha=0.5$} & \multicolumn{2}{c}{$\alpha=1$} &
-		\multicolumn{2}{c}{$\alpha=0.5$} & \multicolumn{2}{c}{$\alpha=1$} \\
-		\cmidrule(lr){3-4} \cmidrule(lr){5-6} \cmidrule(lr){7-8} \cmidrule(lr){9-10}
-		& & \textbf{Ours} & FGW & \textbf{Ours} & FGW & \textbf{Ours} & FGW & \textbf{Ours} & FGW \\
-		\midrule
-		0 & 0.01 & 1.00 & 0.99 & 1.00 & 0.99 & 1.00 & 0.01 & 0.00 & 0.01 \\
-		1 & 1.00 & 1.00 & 1.00 & 1.00 & 0.97 & 1.00 & 1.00 & 0.00 & 0.01 \\
-		\bottomrule
-	\end{tabular}
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{cccccccccccccc}
+			\toprule
+			& &
+			\multicolumn{4}{c}{Geodesic} &
+			\multicolumn{4}{c}{Diffusion} &
+			\multicolumn{4}{c}{RKHS} \\
+			\cmidrule(lr){3-6} \cmidrule(lr){7-10} \cmidrule(lr){11-14}
+			$\sigma^2$ & $\alpha = 0$ &
+			\multicolumn{2}{c}{$\alpha=0.5$} & \multicolumn{2}{c}{$\alpha=1$} &
+			\multicolumn{2}{c}{$\alpha=0.5$} & \multicolumn{2}{c}{$\alpha=1$} &
+			\multicolumn{2}{c}{$\alpha=0.5$} & \multicolumn{2}{c}{$\alpha=1$} \\
+			\cmidrule(lr){3-4} \cmidrule(lr){5-6}
+			\cmidrule(lr){7-8} \cmidrule(lr){9-10}
+			\cmidrule(lr){11-12} \cmidrule(lr){13-14}
+			& & \textbf{Ours} & FGW & \textbf{Ours} & FGW
+			& \textbf{Ours} & FGW & \textbf{Ours} & FGW
+			& \textbf{Ours} & FGW & \textbf{Ours} & FGW \\
+			\midrule
+			0 & 0.01 
+			& 1.00 & 1.00 
+			& 1.00 & 1.00 
+			& 1.00 & 1.00 
+			& 1.00 & 1.00 
+			& 1.00 & 1.00 
+			& 1.00 & 1.00 \\
+			1 & 1.00 
+			& 1.00 & 1.00 
+			& 1.00 & 1.00 
+			& 1.00 & 1.00 
+			& 1.00 & 1.00 
+			& 1.00 & 1.00 
+			& 1.00 & 1.00 \\
+			\bottomrule
+		\end{tabular}%
+	}
 	\vspace{4mm}
-	\caption{Mean node-level matching accuracy over 10 runs. 
-		Each pair of columns reports the results for our convex formulation (\textbf{Ours}) and the FGW baseline under different $\alpha$ values and kernels. 
-		The $\alpha=0$ column represents the shared structural baseline.}
-	\label{tab:comparison}
+	\caption{Mean node-level matching accuracy over 10 runs ($\hat{\mathbb{P}}_X \otimes \hat{\mathbb{P}}_Y$ initialization only).
+		Each pair of columns reports the results for the proposed algorithm (\textbf{Ours}) and the FGW method under different $\alpha$ values and distances.
+		The $\alpha=0$ column represents the pure optimal transport, which is shared by both methods.}
+	\label{tab:comparison_independent}
 \end{table}
+
+%%% Independent initialization %%%
+Table~\ref{tab:comparison_independent} shows the results when both methods are initialized by the independent product coupling $\hat{\mathbb{P}}_X \otimes  \hat{\mathbb{P}}_Y$. Under this initialization, both the proposed algorithm and the FGW solver converge to the correct correspondence across all configurations. Because the graphs are perfectly isomorphic and the initialization is unbiased, the optimization landscape remains symmetric, allowing both methods to achieve the global optimum regardless of the kernel type or feature variance~$\sigma^2$. This serves as a sanity check confirming that the proposed convex relaxation faithfully recovers the true matching in well-conditioned cases, while producing solutions identical to the FGW objective whenever the latter attains its global minimum.
+
+\begin{table}[t]
+	\centering
+	\resizebox{\textwidth}{!}{%
+		\begin{tabular}{cccccccccccccc}
+			\toprule
+			& &
+			\multicolumn{4}{c}{Geodesic} &
+			\multicolumn{4}{c}{Diffusion} &
+			\multicolumn{4}{c}{RKHS} \\
+			\cmidrule(lr){3-6} \cmidrule(lr){7-10} \cmidrule(lr){11-14}
+			$\sigma^2$ & $\alpha = 0$ &
+			\multicolumn{2}{c}{$\alpha=0.5$} & \multicolumn{2}{c}{$\alpha=1$} &
+			\multicolumn{2}{c}{$\alpha=0.5$} & \multicolumn{2}{c}{$\alpha=1$} &
+			\multicolumn{2}{c}{$\alpha=0.5$} & \multicolumn{2}{c}{$\alpha=1$} \\
+			\cmidrule(lr){3-4} \cmidrule(lr){5-6}
+			\cmidrule(lr){7-8} \cmidrule(lr){9-10}
+			\cmidrule(lr){11-12} \cmidrule(lr){13-14}
+			& & \textbf{Ours} & FGW & \textbf{Ours} & FGW
+			& \textbf{Ours} & FGW & \textbf{Ours} & FGW
+			& \textbf{Ours} & FGW & \textbf{Ours} & FGW \\
+			\midrule
+			0 & 0.01 
+			& 1.00 & 1.00 
+			& 1.00 & 0.92 
+			& 1.00 & 0.27 
+			& 1.00 & 0.12 
+			& 1.00 & 0.09 
+			& 1.00 & 0.04 \\
+			1 & 1.00 
+			& 1.00 & 1.00 
+			& 1.00 & 0.90 
+			& 1.00 & 1.00 
+			& 1.00 & 0.14 
+			& 1.00 & 1.00 
+			& 1.00 & 0.04 \\
+			\bottomrule
+		\end{tabular}%
+	}
+	\vspace{4mm}
+	\caption{Mean node-level matching accuracy over 10 runs (random initialization only).
+		Each pair of columns reports the results for the proposed algorithm (\textbf{Ours}) and the FGW method under different $\alpha$ values and distances.
+		The $\alpha=0$ column represents the pure optimal transport, which is shared by both methods.}
+	\label{tab:comparison-random}
+\end{table}
+
+%%% Random initialization %%%
+Table~\ref{tab:comparison-random} summarizes the results when the transport plan is initialized randomly. In this setting, our convex formulation consistently attains perfect node-level recovery across all $\alpha$ and kernel choices, whereas the FGW solver exhibits severe degradation—particularly under diffusion and RKHS distances, and when the feature variance~$\sigma^2$ is small. These results highlight the key advantage of the proposed approach: the convex objective eliminates spurious local minima that hinder the non-convex FGW optimization, thereby ensuring robustness to initialization and stable convergence even when structural cues dominate the feature information.
+
 
 
 %%% References %%%
