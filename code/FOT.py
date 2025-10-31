@@ -28,7 +28,7 @@ def kappa_increasing_logistic(t):
     out[~pos] = np.exp(t[~pos]) / (1.0 + np.exp(t[~pos]))
     return out
 
-def make_distance_kernel_matrix(points, h=1.0, kappa="decreasing_exp", metric="euclidean",pre_D=None):
+def make_distance_kernel_matrix(points, h=1.0, kappa="decreasing_exp", metric="euclidean",pre_D=None,normalize=True):
     """
     Build hat{D}_X^kappa where (D)_{ii'} = K_h(x_i, x_{i'}) = (1/h) * kappa( d(x_i,x_{i'})/h ).
     - points: (n, d) array of coordinates in S (or arbitrary features used only for distances)
@@ -36,6 +36,7 @@ def make_distance_kernel_matrix(points, h=1.0, kappa="decreasing_exp", metric="e
     - kappa: str or callable
     - metric: str or callable
     - pre_D: pre-computed distance matrix
+    - normalize: bool
     """
     if h <= 0:
         raise ValueError("h must be positive")
@@ -52,18 +53,15 @@ def make_distance_kernel_matrix(points, h=1.0, kappa="decreasing_exp", metric="e
 
     if pre_D is None:
         D = cdist(points, points, metric=metric)
-        Dmax = float(D.max())
-        if Dmax > 0:
-            D = D / Dmax
     else:
-        Dmax = float(pre_D.max())
-        if Dmax > 0:
-            D = pre_D / Dmax
+        D = pre_D
 
     Kh = (1.0 / h) * kappa_fun(D / h)
-    Khmax = float(Kh.max())
-    if Khmax > 0:
-        Kh = Kh / Khmax
+
+    if normalize:
+        Khmax = float(Kh.max())
+        if Khmax > 0:
+            Kh = Kh / Khmax
 
     return Kh
 
@@ -178,6 +176,8 @@ class ConvexFusedTransport:
     pre_Cf : pre-computed feature cost.
     pre_DX : pre-computed distance matrix of X.
     pre_DY : pre-computed distance matrix of Y.
+    normalize : bool
+                Whether to normalize the distance and feature matrices to unit norm.
     verbose : int, default=0
         Verbosity level controlling optimization logging:
           - 0 : silent mode (no output)
@@ -197,6 +197,7 @@ class ConvexFusedTransport:
                  pre_Cf=None,
                  pre_DX=None,
                  pre_DY=None,
+                 normalize=True,
                  verbose=0):
         self.alpha = alpha
         self.h = h
@@ -210,6 +211,7 @@ class ConvexFusedTransport:
         self.pre_Cf = pre_Cf
         self.pre_DX = pre_DX
         self.pre_DY = pre_DY
+        self.normalize = normalize
         self.verbose = verbose
 
         # learned attributes
@@ -327,32 +329,35 @@ class ConvexFusedTransport:
             # Cost C_f for feature alignment
             # (squared Euclidean in feature space; customize if needed)
             C_f = cdist(FX, FY, metric='sqeuclidean')
-            Cmax = float(C_f.max())
-            if Cmax > 0:
-                C_f = C_f / Cmax
         else:
             C_f = self.pre_Cf
-            Cmax = float(C_f.max())
-            if Cmax > 0:
-                C_f = C_f / Cmax
+
 
         # Distance-kernel matrices hat{D}_X^κ, hat{D}_Y^κ
         if self.pre_DX is None:
             DkX = make_distance_kernel_matrix(
-                X, h=self.h, kappa=self.kappa, metric=self.metric
+                X, h=self.h, kappa=self.kappa, metric=self.metric, normalize=self.normalize
             )
         else:
             DkX = self.pre_DX
+
+        if self.pre_DY is None:
+            DkY = make_distance_kernel_matrix(
+                Y, h=self.h, kappa=self.kappa, metric=self.metric, normalize=self.normalize
+            )
+        else:
+            DkY = self.pre_DY
+            
+
+        if self.normalize:
+            Cmax = float(C_f.max())
+            if Cmax > 0:
+                C_f = C_f / Cmax
+
             Dmax = float(DkX.max())
             if Dmax > 0:
                 DkX = DkX / Dmax
 
-        if self.pre_DY is None:
-            DkY = make_distance_kernel_matrix(
-                Y, h=self.h, kappa=self.kappa, metric=self.metric
-            )
-        else:
-            DkY = self.pre_DY
             Dmax = float(DkY.max())
             if Dmax > 0:
                 DkY = DkY / Dmax
