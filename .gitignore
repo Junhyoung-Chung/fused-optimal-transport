@@ -23,6 +23,7 @@ venv
 *.Rhistory
 
 # data
+realdata/oasis3_graphmls_scale2
 realdata/KKI
 realdata/MPI-FAUST
 realdata/*.csv
