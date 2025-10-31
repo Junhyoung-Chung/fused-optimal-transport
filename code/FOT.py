@@ -347,7 +347,7 @@ class ConvexFusedTransport:
             )
         else:
             DkY = self.pre_DY
-            
+
 
         if self.normalize:
             Cmax = float(C_f.max())
